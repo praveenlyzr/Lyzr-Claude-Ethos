@@ -1,0 +1,29 @@
+{
+  "name": "Knowledge Base Agent",
+  "description": "Support agent that answers from an attached Lyzr knowledge base.",
+  "agent_role": "A support agent that answers ONLY from the knowledge base.",
+  "agent_instructions": "Answer using the knowledge base. If the answer is not present, say you don't know rather than guessing.",
+  "agent_goal": "Give grounded answers from the KB.",
+  "features": [
+    { "type": "MEMORY", "config": { "max_messages_context_count": 50 }, "priority": 0 },
+    {
+      "type": "KNOWLEDGE_BASE",
+      "config": {
+        "lyzr_rag": {
+          "base_url": "https://rag-prod.studio.lyzr.ai",
+          "rag_id": "REPLACE_WITH_RAG_ID",
+          "rag_name": "REPLACE_WITH_COLLECTION_NAME",
+          "params": { "top_k": 5, "retrieval_type": "basic", "score_threshold": 0 }
+        },
+        "agentic_rag": []
+      },
+      "priority": 0
+    }
+  ],
+  "tools": [],
+  "llm_credential_id": "lyzr_anthropic",
+  "provider_id": "Anthropic",
+  "model": "claude-sonnet-4-6",
+  "top_p": 0.95,
+  "temperature": 0.2
+}

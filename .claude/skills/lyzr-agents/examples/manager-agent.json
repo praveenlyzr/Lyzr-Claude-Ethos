@@ -1,0 +1,18 @@
+{
+  "name": "Manager Agent",
+  "description": "Routes requests to specialized sub-agents.",
+  "agent_role": "A manager that delegates to specialized agents.",
+  "agent_instructions": "Delegate each request to the most appropriate managed agent and return its answer.",
+  "agent_goal": "Route work to the right sub-agent.",
+  "features": [],
+  "managed_agents": [
+    { "id": "REPLACE_WITH_SUBAGENT_ID_1", "name": "Math Agent", "usage_description": "Use for any arithmetic or calculation." },
+    { "id": "REPLACE_WITH_SUBAGENT_ID_2", "name": "Poet Agent", "usage_description": "Use to write a short poem about a topic." }
+  ],
+  "tools": [],
+  "llm_credential_id": "lyzr_anthropic",
+  "provider_id": "Anthropic",
+  "model": "claude-sonnet-4-6",
+  "top_p": 0.95,
+  "temperature": 0.2
+}

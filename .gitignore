@@ -1,0 +1,10 @@
+# Python
+__pycache__/
+*.pyc
+
+# Local env / secrets — never commit the Lyzr API key
+.env
+*.local
+
+# OS
+.DS_Store

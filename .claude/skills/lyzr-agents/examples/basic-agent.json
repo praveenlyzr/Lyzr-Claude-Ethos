@@ -1,0 +1,14 @@
+{
+  "name": "Basic Agent",
+  "description": "A general-purpose assistant.",
+  "agent_role": "A helpful, concise assistant.",
+  "agent_instructions": "Answer the user clearly and concisely. Ask for clarification when the request is ambiguous.",
+  "agent_goal": "Help the user accomplish their task.",
+  "features": [],
+  "tools": [],
+  "llm_credential_id": "lyzr_anthropic",
+  "provider_id": "Anthropic",
+  "model": "claude-sonnet-4-6",
+  "top_p": 0.95,
+  "temperature": 0.5
+}

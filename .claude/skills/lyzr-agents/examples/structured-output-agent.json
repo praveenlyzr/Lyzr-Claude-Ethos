@@ -1,0 +1,31 @@
+{
+  "name": "Structured Sentiment Agent",
+  "description": "Classifies text sentiment and returns strict JSON.",
+  "agent_role": "A sentiment classifier.",
+  "agent_instructions": "Classify the sentiment of the user's text. Return ONLY a JSON object with fields: sentiment (one of positive/negative/neutral), confidence (0-1 number as string), and reason (one short sentence). No markdown.",
+  "agent_goal": "Produce reliable structured sentiment output.",
+  "features": [],
+  "tools": [],
+  "llm_credential_id": "lyzr_anthropic",
+  "provider_id": "Anthropic",
+  "model": "claude-sonnet-4-6",
+  "top_p": 0.95,
+  "temperature": 0.2,
+  "response_format": {
+    "type": "json_schema",
+    "json_schema": {
+      "name": "SentimentResult",
+      "strict": true,
+      "schema": {
+        "type": "object",
+        "properties": {
+          "sentiment": {"type": "string", "description": "positive, negative, or neutral"},
+          "confidence": {"type": "string", "description": "confidence from 0 to 1"},
+          "reason": {"type": "string", "description": "one short sentence explaining the call"}
+        },
+        "required": ["sentiment", "confidence", "reason"],
+        "additionalProperties": false
+      }
+    }
+  }
+}

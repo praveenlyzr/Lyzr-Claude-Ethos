@@ -1,0 +1,383 @@
+# Lyzr docs index (fallback)
+
+Use this when the skill's reference files don't cover something. Every doc page is fetchable
+as **raw markdown by appending `.md`** to its URL — that's the last-resort lookup:
+
+```bash
+# fetch any page (no auth needed):
+curl -s "https://docs.lyzr.ai/<path>.md"
+# or via the helper:
+python3 .claude/skills/lyzr-agents/scripts/lyzr.py docs "<path-or-url>"
+```
+The intro page also points to the canonical index at https://docs.lyzr.ai/llms.txt
+(re-fetch it if these links go stale). Full current index below (title → URL: description).
+
+---
+
+# Docs
+
+## Docs
+
+- [Chat With Agent](https://docs.lyzr.ai/agent-apis/agents/Chat.md): Initiates a new chat session or continues an existing one with a specified agent. Supports multimodal interaction by referencing uploaded asset IDs and optional feature configuration.
+- [Create Agent](https://docs.lyzr.ai/agent-apis/agents/Create Agent.md): Create a new agent by providing comprehensive configuration details. Returns the ID of the newly created agent.
+- [Delete Agent Endpoint](https://docs.lyzr.ai/agent-apis/agents/Delete Agent Endpoint.md): Deletes an agent from the system using its unique agent_id.
+- [Get Agents By API Key](https://docs.lyzr.ai/agent-apis/agents/Get Agent By API Key.md): Retrieves all agents associated with a given API key. This is useful for managing multiple agents and checking their configurations.
+- [Get Agent Version](https://docs.lyzr.ai/agent-apis/agents/Get Agent Version.md): Retrieve a specific version of an agent using agent ID and version ID.
+- [Get Agent by ID Endpoint](https://docs.lyzr.ai/agent-apis/agents/Get Agent by ID Endpoint.md): Retrieve agent details using the agent ID.
+- [Lyzr Agents API](https://docs.lyzr.ai/agent-apis/agents/Introduction.md)
+- [Agent versions](https://docs.lyzr.ai/agent-apis/agents/List Agent Version.md): Retrieve a list of all versions for a given agent.
+- [Initiate/Continue Agent Chat](https://docs.lyzr.ai/agent-apis/agents/MultimodalChat.md): Initiates a new chat session or continues an existing one with a specified agent. Supports multimodal interaction by referencing uploaded asset IDs and optional feature configuration.
+- [Stream Chat](https://docs.lyzr.ai/agent-apis/agents/Stream Chat.md): Start a streaming chat interaction with an agent using the v3 inference stream endpoint.
+- [Update Agent Endpoint](https://docs.lyzr.ai/agent-apis/agents/Update Agent Endpoint.md): Update an existing agent's configuration. Requires `agents:update` permission or ownership of the agent.
+- [Agents Events in Lyzr Studio](https://docs.lyzr.ai/agent-apis/agents/agent events.md)
+- [Create RAG Configuration](https://docs.lyzr.ai/agent-apis/knowledgebase/Create RAG.md): Creates a new RAG configuration using LLM, embedding, and vector store credentials.
+- [Deduplicate Entities](https://docs.lyzr.ai/agent-apis/knowledgebase/Deduplicate Entities.md): Triggers a deduplication process to merge redundant entities within the knowledge graph of the specified RAG system.
+- [Delete RAG Configuration](https://docs.lyzr.ai/agent-apis/knowledgebase/Delete RAG Config.md): Deletes an existing RAG configuration by its ID.
+- [Get Configs By User](https://docs.lyzr.ai/agent-apis/knowledgebase/Get Configs By User.md): Retrieves the list of RAG configurations configured by a specific user ID.
+- [Get Knowledge Graph](https://docs.lyzr.ai/agent-apis/knowledgebase/Get Knowledge Graph.md): Get the knowledge graph visualization data for a Neo4j-based RAG system (nodes, edges, and metadata).
+- [Get RAG configuration](https://docs.lyzr.ai/agent-apis/knowledgebase/Get RAG Config.md)
+- [Get Rag Docs](https://docs.lyzr.ai/agent-apis/knowledgebase/Get Rag Docs.md): Retrieves the list of documents and data chunks currently indexed under the specified RAG system ID.
+- [Parse Csv](https://docs.lyzr.ai/agent-apis/knowledgebase/Parse CSV.md): Upload and process a CSV file, using a specified column's data for parsing.
+- [Parse Pdf](https://docs.lyzr.ai/agent-apis/knowledgebase/Parse PDF.md): Upload and process a PDF file using specified parsing and chunking configurations.
+- [Parse Text](https://docs.lyzr.ai/agent-apis/knowledgebase/Parse Text.md): Process raw text data into structured document chunks.
+- [Parse Website](https://docs.lyzr.ai/agent-apis/knowledgebase/Parse Website.md): Crawl websites and parse content based on the provided URLs and crawl settings.
+- [Reset Rag](https://docs.lyzr.ai/agent-apis/knowledgebase/Reset RAG.md): Resets the data and state of the specified RAG system, effectively clearing all trained knowledge.
+- [Retrieve](https://docs.lyzr.ai/agent-apis/knowledgebase/Retrieve RAG.md): Searches the RAG system's knowledge base using a query and returns the most relevant documents based on the specified retrieval method.
+- [Train Neo4J Task](https://docs.lyzr.ai/agent-apis/knowledgebase/Train Neo-4j Task.md): Start a training task for Neo4j file processing.
+- [Train Neo4J Text](https://docs.lyzr.ai/agent-apis/knowledgebase/Train Neo-4j Text.md): Start a knowledge graph training task using raw text input.
+- [Train Text](https://docs.lyzr.ai/agent-apis/knowledgebase/Train Txt.md): Process raw text data and use it to train the specified RAG system.
+- [Train Website](https://docs.lyzr.ai/agent-apis/knowledgebase/Train Website.md): Crawl websites, process the content, and use it to train the specified RAG system.
+- [Update RAG Configuration](https://docs.lyzr.ai/agent-apis/knowledgebase/Update RAG Config.md): Update the configuration for an existing RAG setup by providing the config ID and updated values.
+- [Connect Database to RAG Endpoint](https://docs.lyzr.ai/agent-apis/knowledgebase/connect-database-to-rag-endpoint.md)
+- [Create Documentation Agent](https://docs.lyzr.ai/agent-apis/knowledgebase/create-documentation-agent.md)
+- [Get Table Names Endpoint](https://docs.lyzr.ai/agent-apis/knowledgebase/fetch-table-names.md)
+- [Get Documentation Agent](https://docs.lyzr.ai/agent-apis/knowledgebase/get-documentation-agents.md): Fetches documentation agents for the authenticated user.
+- [Preview Table Data](https://docs.lyzr.ai/agent-apis/knowledgebase/preview-table-data.md)
+- [Save Documentation Agent](https://docs.lyzr.ai/agent-apis/knowledgebase/save-documentation-endpoint.md): Saves documentation for a specific table to the vector store.
+- [Asynchronous Endpoint To Save Documentation Task](https://docs.lyzr.ai/agent-apis/knowledgebase/save-documentation-task-endpoint.md): Initiates an asynchronous task to save table documentation including descriptions and a data preview.
+- [Train Neo4J Knowledge Graph](https://docs.lyzr.ai/agent-apis/knowledgebase/trainkg.md): Upload a PDF or document file and define the schema prompt to train a knowledge graph in a Neo4J database.
+- [Train Neo4J Website](https://docs.lyzr.ai/agent-apis/knowledgebase/trainkgweb.md): Crawl websites and generate a knowledge graph using Neo4J based on the provided URLs and crawl settings.
+- [Train PDF for RAG](https://docs.lyzr.ai/agent-apis/knowledgebase/trainrag.md): Upload a PDF file to train and add content into a specific RAG configuration.
+- [Train DOCX for RAG](https://docs.lyzr.ai/agent-apis/knowledgebase/trainragdocx.md): Upload a DOCX file to train and add content into a specific RAG configuration.
+- [Train TXT for RAG](https://docs.lyzr.ai/agent-apis/knowledgebase/trainragtxt.md): Upload a plain text (.txt) file and ingest its content into the provided RAG configuration.
+- [Agent API](https://docs.lyzr.ai/agent-apis/orchestration/api.md)
+- [Create Workflows](https://docs.lyzr.ai/agent-apis/orchestration/create-workflow-endpoint.md)
+- [Delete Workflow](https://docs.lyzr.ai/agent-apis/orchestration/delete-workflow-endpoint.md)
+- [Execute Workflow](https://docs.lyzr.ai/agent-apis/orchestration/execute-workflow-endpoint.md): Execute a workflow by ID with optional custom input data.
+- [Get Workflow Endpoint](https://docs.lyzr.ai/agent-apis/orchestration/get-workflow-endpoint.md)
+- [List Workflows](https://docs.lyzr.ai/agent-apis/orchestration/list-workflows-endpoint.md): Retrieve a list of all workflows associated with the authenticated user.
+- [Update Workflow](https://docs.lyzr.ai/agent-apis/orchestration/update-workflow-endpoint.md): Update an existing workflow.
+- [Create RAI Policy](https://docs.lyzr.ai/agent-apis/responsible-safe-ai/Create RAI Policy.md)
+- [Get RAI Policies](https://docs.lyzr.ai/agent-apis/responsible-safe-ai/Get User Policies.md): Get all RAI policies for the authenticated user.
+- [Prompt Injection](https://docs.lyzr.ai/agent-apis/responsible-safe-ai/Prompt Injection.md): Detects whether the input text contains prompt injection.
+- [Toxicity Checker](https://docs.lyzr.ai/agent-apis/responsible-safe-ai/Toxicity.md): Analyzes the input text for toxicity and returns the result.
+- [Lyzr Agent Published Session Retrieval](https://docs.lyzr.ai/agent-apis/sessions/get-published-sessions-endpoint-by-agent-endpoint.md): Retrieves a list of published session IDs that have been created for the specified agent ID.
+- [Lyzr Agent Full Conversation](https://docs.lyzr.ai/agent-apis/sessions/get-session-full-conversation-endpoint.md): Retrieves the entire, raw conversation history associated with a specific session ID.
+- [Lyzr Agent Session History](https://docs.lyzr.ai/agent-apis/sessions/get-session-history-endpoint.md): Retrieves the historical conversation transcript for a specified session ID.
+- [Lyzr Agent Session Management](https://docs.lyzr.ai/agent-apis/sessions/get-session-history-endpoint-by-agent.md): Retrieves the historical conversation transcript for a specified session and agent.
+- [Lyzr Agent Session Summary](https://docs.lyzr.ai/agent-apis/sessions/get-session-payload-endpoint.md): Retrieves the summary or payload data associated with a specific session ID.
+- [Lyzr Agent Session Retrieval](https://docs.lyzr.ai/agent-apis/sessions/get-sessions-endpoint-by-agent-endpoint.md): Retrieves a list of all session IDs that have been created for the specified agent ID.
+- [Create OpenAPI Tool Endpoint](https://docs.lyzr.ai/agent-apis/tools/Create OpenAPI Tool Endpoint.md)
+- [Create Tool Credential Endpoint](https://docs.lyzr.ai/agent-apis/tools/Create Tool Credential Endpoint.md): Creates a new credential for a tool.
+- [Delete Tool Credential Endpoint](https://docs.lyzr.ai/agent-apis/tools/Delete Tool Credential Endpoint.md)
+- [Delete Tool Endpoint](https://docs.lyzr.ai/agent-apis/tools/Delete Tool Endpoint.md)
+- [Execute OpenAPI Tool](https://docs.lyzr.ai/agent-apis/tools/Execute OpenAPI Tool.md): Executes a specific OpenAPI tool using provided parameters.
+- [Get OpenAPI Tool Info](https://docs.lyzr.ai/agent-apis/tools/Get OpenAPI Tool Info.md): Fetches detailed information about a specific OpenAPI tool.
+- [Get Tool Endpoint](https://docs.lyzr.ai/agent-apis/tools/Get Tool Endpoint.md)
+- [Get User Tools](https://docs.lyzr.ai/agent-apis/tools/Get User Tools.md): Retrieves all tools associated with a user.
+- [Toggle Tool](https://docs.lyzr.ai/agent-apis/tools/Toggle Tool.md)
+- [Update Tool Credential Endpoint](https://docs.lyzr.ai/agent-apis/tools/Update Tool Credential Endpoint.md): Update an existing tool credential by its ID.
+- [Update Tool Endpoint](https://docs.lyzr.ai/agent-apis/tools/Update Tool Endpoint.md): This endpoint allows updating an existing tool's configuration.
+- [Activate Agent Version](https://docs.lyzr.ai/agent-apis/voiceagents/activate-agent-version.md): Set a specific historical version of an agent as the active configuration.
+- [Create Agent](https://docs.lyzr.ai/agent-apis/voiceagents/create-agent.md): Create a new saved voice agent with a specific configuration.
+- [Delete Agent](https://docs.lyzr.ai/agent-apis/voiceagents/delete-agent.md)
+- [Get Agent Details](https://docs.lyzr.ai/agent-apis/voiceagents/get-agent-details.md): Retrieve the full configuration and details of a specific saved voice agent using its unique ID.
+- [Get Agent Stats](https://docs.lyzr.ai/agent-apis/voiceagents/get-agent-stats.md): Retrieve aggregated transcript statistics and usage metrics for a specific voice agent.
+- [Get Trace Details](https://docs.lyzr.ai/agent-apis/voiceagents/get-trace-details.md): Retrieve the full, granular details of a specific Langfuse trace, including all its underlying observations.
+- [Get Transcript](https://docs.lyzr.ai/agent-apis/voiceagents/get-transcript.md): Retrieve the complete, detailed transcript document for a specific session ID within the caller's authorized scope.
+- [List Agent Shares](https://docs.lyzr.ai/agent-apis/voiceagents/list-agent-shares.md): Retrieve a list of all user IDs that have been granted shared access to a specific agent.
+- [List Agent Versions](https://docs.lyzr.ai/agent-apis/voiceagents/list-agent-versions.md): Retrieve a history of all saved configurations (versions) for a specific agent.
+- [List Agents](https://docs.lyzr.ai/agent-apis/voiceagents/list-agents.md)
+- [List Pipeline Options](https://docs.lyzr.ai/agent-apis/voiceagents/list-pipeline-options.md): Retrieve the complete list of supported providers and models for Speech-to-Text (STT), Large Language Models (LLM), and Text-to-Speech (TTS) pipelines.
+- [List Provider Voices](https://docs.lyzr.ai/agent-apis/voiceagents/list-provider-voices.md): Retrieve a filterable, paginated list of available TTS voices for a specific provider.
+- [List Realtime Options](https://docs.lyzr.ai/agent-apis/voiceagents/list-realtime-options.md): Retrieve a comprehensive list of all supported realtime voice providers, their available models, supported languages, voice configurations, and required environment variables.
+- [List Session Traces](https://docs.lyzr.ai/agent-apis/voiceagents/list-session-traces.md): Retrieve a paginated list of Langfuse observability traces for a specific LiveKit session.
+- [List Transcripts](https://docs.lyzr.ai/agent-apis/voiceagents/list-transcripts.md): Retrieve a paginated list of call transcripts and session reports within the caller's authorized scope.
+- [List Transcripts by Agent](https://docs.lyzr.ai/agent-apis/voiceagents/list-transcripts-by-agent.md): Retrieve a paginated list of session transcripts handled by a specific voice agent.
+- [List TTS Voice Providers](https://docs.lyzr.ai/agent-apis/voiceagents/list-tts-voice-providers.md): Retrieve a list of available Text-to-Speech (TTS) voice providers along with their configuration status and search capabilities.
+- [Share Agent](https://docs.lyzr.ai/agent-apis/voiceagents/share-agent.md): Share a specific agent with one or more users via their email addresses.
+- [Stream Transcript Audio](https://docs.lyzr.ai/agent-apis/voiceagents/stream-transcript-audio.md): Stream the raw audio recording (.ogg) of a specific LiveKit session.
+- [Stream Voice Preview](https://docs.lyzr.ai/agent-apis/voiceagents/stream-voice-preview.md): Stream a short audio preview of a specific TTS voice from a given provider.
+- [Unshare Agent](https://docs.lyzr.ai/agent-apis/voiceagents/unshare-agent.md): Revoke access to a specific agent from one or more users via their email addresses.
+- [Accounts & Billing](https://docs.lyzr.ai/agent-lab/accounts-billing.md): Manage Lyzr Agent Studio Account
+- [Agent Simulation and Hardening](https://docs.lyzr.ai/agent-lab/agent eval/agentsimulation.md)
+- [Monitoring & Tracing](https://docs.lyzr.ai/agent-lab/agent eval/tracing.md)
+- [Image as an Output](https://docs.lyzr.ai/agent-lab/agent features/Image output.md)
+- [Agents Events in Lyzr Studio](https://docs.lyzr.ai/agent-lab/agent features/agent events.md)
+- [Global Context](https://docs.lyzr.ai/agent-lab/agent features/global context.md)
+- [Custom Max Iterations](https://docs.lyzr.ai/agent-lab/agent features/max.md)
+- [Memory Management](https://docs.lyzr.ai/agent-lab/agent features/memory.md)
+- [PowerPoint (PPT) Agent Output](https://docs.lyzr.ai/agent-lab/agent features/ppt.md)
+- [Scheduler](https://docs.lyzr.ai/agent-lab/agent features/schedulers.md)
+- [Structured Outputs](https://docs.lyzr.ai/agent-lab/agent features/structured.md)
+- [Real-time Session Monitoring via WebSocket](https://docs.lyzr.ai/agent-lab/agent features/web socket.md)
+- [Webhook Triggers](https://docs.lyzr.ai/agent-lab/agent features/webhooks.md)
+- [Agents](https://docs.lyzr.ai/agent-lab/agents/introduction.md): Introduction and overview of agents
+- [Audit Logs](https://docs.lyzr.ai/agent-lab/audit-logs.md)
+- [Lyzr ADK (Agent Development Kit)](https://docs.lyzr.ai/agent-lab/build-paths/adkpath.md)
+- [Agent Builder (Conversational AI)](https://docs.lyzr.ai/agent-lab/build-paths/agentbuilder/build.md)
+- [API Build Path](https://docs.lyzr.ai/agent-lab/build-paths/api/apipath.md)
+- [Studio Build Path](https://docs.lyzr.ai/agent-lab/build-paths/studio/studiopath.md)
+- [Data Connectors](https://docs.lyzr.ai/agent-lab/dataconnectors/introduction.md)
+- [Milvus Vector Store](https://docs.lyzr.ai/agent-lab/dataconnectors/milvus.md)
+- [Neo4j GraphDB](https://docs.lyzr.ai/agent-lab/dataconnectors/neo.md)
+- [Qdrant Vector Store](https://docs.lyzr.ai/agent-lab/dataconnectors/qdrant.md)
+- [SingleStore Vector Store](https://docs.lyzr.ai/agent-lab/dataconnectors/singlestore.md)
+- [Weaviate Vector Store](https://docs.lyzr.ai/agent-lab/dataconnectors/weaviate.md)
+- [Understanding Knowledge Systems in Lyzr](https://docs.lyzr.ai/agent-lab/knowledgebase/introduction.md): A comprehensive overview of Lyzr's three core knowledge systems—Knowledge Base, Knowledge Graph, and Semantic Model—to help you choose the right tool for your agents and data.
+- [Classic Knowledge Base](https://docs.lyzr.ai/agent-lab/knowledgebase/studiokb.md)
+- [Knowledge Graph](https://docs.lyzr.ai/agent-lab/knowledgebase/studiokg.md)
+- [Connecting Agents to Databases via Data Query](https://docs.lyzr.ai/agent-lab/knowledgebase/studiosem.md)
+- [Lyzr Agents as MCP Servers](https://docs.lyzr.ai/agent-lab/lyzr-mcp/introduction.md): Make Lyzr agents available as MCP servers
+- [Lyzr Agents as MCP Servers](https://docs.lyzr.ai/agent-lab/lyzr-mcp/setup.md)
+- [Lyzr Agents as MCP Servers](https://docs.lyzr.ai/agent-lab/lyzr-mcp/usage.md)
+- [Agent API](https://docs.lyzr.ai/agent-lab/manageragent/api.md)
+- [Manager Agent in Lyzr Agents](https://docs.lyzr.ai/agent-lab/manageragent/studio.md)
+- [Introduction to orchestration](https://docs.lyzr.ai/agent-lab/orchestration/orchestration-engine/comparison.md)
+- [Workflow Builder](https://docs.lyzr.ai/agent-lab/orchestration/studio.md)
+- [Enterprise Integration Patterns](https://docs.lyzr.ai/agent-lab/orchestration/workflow/enterprise-pattern.md)
+- [Error Handling & Tips](https://docs.lyzr.ai/agent-lab/orchestration/workflow/error-handling.md)
+- [Workflow Integration](https://docs.lyzr.ai/agent-lab/orchestration/workflow/intro.md)
+- [Common Node Types](https://docs.lyzr.ai/agent-lab/orchestration/workflow/node-types.md)
+- [WebSocket Events](https://docs.lyzr.ai/agent-lab/orchestration/workflow/web-socket.md)
+- [💳 Plans & Pricing](https://docs.lyzr.ai/agent-lab/plans.md): Lyzr offers both yearly and monthly subscription plans. We recommend selecting the plan that best fits your needs, and our customer support team is always available to help you choose the right package.
+- [Responsible AI](https://docs.lyzr.ai/agent-lab/responsible-safe-ai/Responsible.md): Enforce ethical AI usage with automated protections for content moderation, privacy, and compliance in your Lyzr agents.
+- [Hallucination Manager](https://docs.lyzr.ai/agent-lab/responsible-safe-ai/Safe.md)
+- [Team Management](https://docs.lyzr.ai/agent-lab/team-management.md): Team management in Lyzr Agent Studio
+- [Custom Tool Creation Using Studio](https://docs.lyzr.ai/agent-lab/tools/Custom Tools.md)
+- [Custom MCP Server Tool Deep Dive](https://docs.lyzr.ai/agent-lab/tools/MCP.md)
+- [Composio Tools](https://docs.lyzr.ai/agent-lab/tools/Ready Tools.md)
+- [📅 Calendly Integration with Lyzr](https://docs.lyzr.ai/agent-lab/tools/ready/calendly.md)
+- [✅ ClickUp Integration with Lyzr](https://docs.lyzr.ai/agent-lab/tools/ready/clickup.md)
+- [💬 Discord Integration with Lyzr](https://docs.lyzr.ai/agent-lab/tools/ready/discord.md)
+- [🛠️ GitHub Integration with Lyzr](https://docs.lyzr.ai/agent-lab/tools/ready/github.md)
+- [📧 Gmail Integration with Lyzr](https://docs.lyzr.ai/agent-lab/tools/ready/gmail.md)
+- [📆 Google Calendar Integration with Lyzr](https://docs.lyzr.ai/agent-lab/tools/ready/googlecalender.md)
+- [☁️ Google Drive Integration with Lyzr](https://docs.lyzr.ai/agent-lab/tools/ready/googledrive.md)
+- [✅ Google Tasks Integration with Lyzr](https://docs.lyzr.ai/agent-lab/tools/ready/googletasks.md)
+- [🧠 Notion Integration with Lyzr](https://docs.lyzr.ai/agent-lab/tools/ready/notion.md)
+- [📬 Outlook Integration with Lyzr](https://docs.lyzr.ai/agent-lab/tools/ready/outlook.md)
+- [🔍 Perplexity AI Integration with Lyzr](https://docs.lyzr.ai/agent-lab/tools/ready/perplexity.md)
+- [Slack Integration with Lyzr](https://docs.lyzr.ai/agent-lab/tools/ready/slack.md)
+- [🎧 Spotify Integration with Lyzr](https://docs.lyzr.ai/agent-lab/tools/ready/spotify.md)
+- [🐦 Twitter (X) Integration with Lyzr](https://docs.lyzr.ai/agent-lab/tools/ready/twitter.md)
+- [📺 YouTube Integration with Lyzr](https://docs.lyzr.ai/agent-lab/tools/ready/youtube.md)
+- [Integrating Tools with Lyzr Agents](https://docs.lyzr.ai/agent-lab/tools/tools overview.md)
+- [Monitoring & Telephony Configuration](https://docs.lyzr.ai/agent-lab/voice agent/monitor.md)
+- [Lyzr Voice Agent: External Integration Guide](https://docs.lyzr.ai/agent-lab/voice agent/streaming.md)
+- [Voice Agents](https://docs.lyzr.ai/agent-lab/voice agent/voice.md)
+- [Voice Service WebSocket Integration](https://docs.lyzr.ai/agent-lab/voice agent/web socket.md)
+- [Add Memories](https://docs.lyzr.ai/cognis/add-memories.md): Store conversation messages into Cognis memory
+- [API Reference](https://docs.lyzr.ai/cognis/api-reference.md): Complete method signatures and return types for the open-source Cognis class
+- [Configuration](https://docs.lyzr.ai/cognis/claude-cognis/configuration.md): Global settings, per-project config, environment variables, and memory scoping
+- [Features](https://docs.lyzr.ai/cognis/claude-cognis/features.md): Hooks, MCP tools, skills, and commands — everything Claude-Cognis provides
+- [Claude-Cognis](https://docs.lyzr.ai/cognis/claude-cognis/overview.md): Persistent memory plugin for Claude Code — remembers your work across sessions
+- [Quickstart](https://docs.lyzr.ai/cognis/claude-cognis/quickstart.md): Install Claude-Cognis and give Claude Code persistent memory in under 2 minutes
+- [Hosted vs Open Source](https://docs.lyzr.ai/cognis/comparison.md): Compare Cognis Hosted (lyzr-adk) and Open Source (lyzr-cognis) to choose the right fit
+- [Configuration](https://docs.lyzr.ai/cognis/configuration.md): Initialization, API keys, search tuning, and advanced settings for both hosted and open-source
+- [Lyzr Cognis + Agno](https://docs.lyzr.ai/cognis/cookbooks/cognis-agno.md): Add persistent memory to Agno agents using Lyzr Cognis
+- [Lyzr Cognis + CrewAI](https://docs.lyzr.ai/cognis/cookbooks/cognis-crewai.md): Add persistent memory to CrewAI agents using Lyzr Cognis
+- [Lyzr Cognis + LangChain](https://docs.lyzr.ai/cognis/cookbooks/cognis-langchain.md): Add persistent memory to LangChain agents using Lyzr Cognis
+- [Lyzr Cognis + LangGraph](https://docs.lyzr.ai/cognis/cookbooks/cognis-langgraph.md): Add persistent memory to LangGraph agents using Lyzr Cognis
+- [Your First Memory](https://docs.lyzr.ai/cognis/cookbooks/getting-started.md): Add, search, and retrieve memories in 3 minutes — both hosted and open source
+- [Cognis Memory Cookbooks](https://docs.lyzr.ai/cognis/cookbooks/overview.md): Integration guides for adding persistent memory to your AI agents
+- [Delete Memories](https://docs.lyzr.ai/cognis/delete-memories.md): Remove individual memories or clear entire sessions from Cognis
+- [Async Client](https://docs.lyzr.ai/cognis/features/async-client.md): Full async/await support for all Cognis operations
+- [Context Assembly](https://docs.lyzr.ai/cognis/features/context.md): Server-side context assembly combining short-term messages and long-term memories
+- [Cross-Session Search](https://docs.lyzr.ai/cognis/features/cross-session.md): Search and retrieve memories across all sessions for a user
+- [Delete Session](https://docs.lyzr.ai/cognis/features/delete-session.md): Clear all messages and memories from a session
+- [Get Messages](https://docs.lyzr.ai/cognis/features/get-messages.md): Retrieve raw conversation messages (not extracted memories)
+- [Hybrid Search](https://docs.lyzr.ai/cognis/features/hybrid-search.md): Two-stage Matryoshka vector search + BM25 keyword matching fused with Reciprocal Rank Fusion
+- [Memory Categories](https://docs.lyzr.ai/cognis/features/memory-categories.md): 13 auto-tagged categories for extracted memories
+- [Retrieval Strategies](https://docs.lyzr.ai/cognis/features/retrieval-strategies.md): 6 retrieval strategies for different use cases
+- [Session Management](https://docs.lyzr.ai/cognis/features/session-management.md): Scope memories with owner_id, agent_id, and session_id
+- [Summaries](https://docs.lyzr.ai/cognis/features/summaries.md): Store, retrieve, and search conversation summaries across sessions
+- [Get Memories](https://docs.lyzr.ai/cognis/get-memories.md): Retrieve and list all stored memories from Cognis
+- [Cognis](https://docs.lyzr.ai/cognis/overview.md): Memory layer for AI agents — remember facts, preferences, and context across conversations
+- [Quickstart](https://docs.lyzr.ai/cognis/quickstart.md): Install Cognis and run your first memory operations in 3 minutes
+- [Search Memories](https://docs.lyzr.ai/cognis/search-memories.md): Semantic search across stored memories in Cognis
+- [Update Memories](https://docs.lyzr.ai/cognis/update-memories.md): Modify existing memory content or metadata in Cognis
+- [Choosing the Right Model for Your Use Case](https://docs.lyzr.ai/cookbooks/Choosing Model.md)
+- [Build a Data Analyst Agent That Connects to Your Database and Provides Insights](https://docs.lyzr.ai/cookbooks/Data Analyst Agent.md)
+- [Product Support Chatbot that Reads 100+ Web Pages](https://docs.lyzr.ai/cookbooks/Product Support Chatbot.md)
+- [Compliance Advisor Bot](https://docs.lyzr.ai/cookbooks/Responsible AI.md)
+- [Tooling](https://docs.lyzr.ai/cookbooks/Tooling.md)
+- [Lyzr - NANDA MCP Server Cookbook](https://docs.lyzr.ai/cookbooks/lyzr-nanda.md): Building a Lyzr MCP Server on NANDA
+- [Ms teams channel](https://docs.lyzr.ai/cookbooks/ms_teams_channel.md)
+- [Slack channel](https://docs.lyzr.ai/cookbooks/slack_channel.md)
+- [Lyzr - Software Manager](https://docs.lyzr.ai/cookbooks/software-manager.md): Learn how to build a software manager agent using multi agent orchestration
+- [Telegram channel](https://docs.lyzr.ai/cookbooks/telegram_channel.md)
+- [Build a Voice Support Agent with Lyzr](https://docs.lyzr.ai/cookbooks/voice-agent.md)
+- [Join the Lyzr Community](https://docs.lyzr.ai/introduction/community/community.md): Join the Lyzr community on Slack and GitHub to connect, contribute, and collaborate.
+- [Understanding Credits](https://docs.lyzr.ai/introduction/getting-started/credits.md)
+- [Lyzr](https://docs.lyzr.ai/introduction/getting-started/intro.md): The simplest agent framework to build 'Secure, Safe and Responsible' GenAI apps faster
+- [Quick Start](https://docs.lyzr.ai/introduction/getting-started/quickstarts.md): Get up and running with Lyzr Agent Studio in under a minute
+- [What You Can Build](https://docs.lyzr.ai/introduction/getting-started/what-can-you-build-on-lyzr.md): Explore all the powerful GenAI use cases Lyzr enables through its flexible agent framework.
+- [What Makes Lyzr Unique](https://docs.lyzr.ai/introduction/getting-started/what-makes-us-unique.md): Discover the key differentiators that set Lyzr apart in the GenAI agent landscape.
+- [Glossary](https://docs.lyzr.ai/introduction/key-concepts/Glossary.md): Key terminology and definitions for Lyzr Agent Studio and generative AI concepts.
+- [Structured Outputs](https://docs.lyzr.ai/introduction/key-concepts/Structured.md): Understand what structured outputs are, why they matter, and how to use them in Lyzr Agents.
+- [Manager Agent](https://docs.lyzr.ai/introduction/key-concepts/manager-agent.md): Deep dive into Lyzr’s Manager Agent for dynamic multi-agent orchestration.
+- [Retrieval-Augmented Generation (RAG)](https://docs.lyzr.ai/introduction/key-concepts/rag.md): Overview of Retrieval-Augmented Generation and how Lyzr leverages it for accurate, context-rich responses.
+- [Responsible AI](https://docs.lyzr.ai/introduction/key-concepts/responsibleai.md): Lyzr’s built-in Responsible AI features ensure safe, fair, and compliant agent behavior.
+- [AWS Bedrock Models](https://docs.lyzr.ai/introduction/models/aws-bedrock.md): A fully managed service that offers a choice of high-performing foundation models from leading AI companies via a single API.
+- [Anthropic Models](https://docs.lyzr.ai/introduction/models/claude.md): High-intelligence models known for their safety-first approach, sophisticated reasoning, and industry-leading coding capabilities.
+- [Google Models](https://docs.lyzr.ai/introduction/models/google.md): State-of-the-art multimodal models by Google, featuring massive context windows and advanced reasoning capabilities for the agentic era.
+- [OpenAI Models](https://docs.lyzr.ai/introduction/models/gpt.md): Industry-leading LLMs available in Lyzr, ranging from ultra-fast mini models to advanced reasoning and frontier systems.
+- [Groq Models](https://docs.lyzr.ai/introduction/models/groq.md): Groq-hosted LLMs available in Lyzr with ultra-fast performance, ideal for real-time agent interactions
+- [Models](https://docs.lyzr.ai/introduction/models/overview.md): Models available in Lyzr
+- [Perplexity Models](https://docs.lyzr.ai/introduction/models/perplexity.md): Search-centric LLMs that provide real-time, citation-backed answers by blending advanced reasoning with live web data.
+- [Getting Support](https://docs.lyzr.ai/introduction/support/contact.md)
+- [FAQs](https://docs.lyzr.ai/introduction/support/faqs.md)
+- [How to Use - API](https://docs.lyzr.ai/introduction/using-lyzr/Howtouse/API.md): Guide to using Lyzr's powerful REST API for building and managing AI agents.
+- [Agent Building](https://docs.lyzr.ai/introduction/using-lyzr/Howtouse/Studio.md): How to build an agent on Lyzr Studio?
+- [Components](https://docs.lyzr.ai/introduction/using-lyzr/components.md): Understanding the core components of Lyzr’s agent framework and Studio.
+- [Agent Features](https://docs.lyzr.ai/lyzr-adk/agents/agent-features.md): Add memory, tools, contexts, RAI, and more to agents
+- [Creating Agents](https://docs.lyzr.ai/lyzr-adk/agents/creating-agents.md): Create AI agents with the Lyzr ADK
+- [Managing Agents](https://docs.lyzr.ai/lyzr-adk/agents/managing-agents.md): Update, delete, clone, and list agents
+- [Agents Overview](https://docs.lyzr.ai/lyzr-adk/agents/overview.md): Build and manage AI agents with the Lyzr ADK
+- [Running Agents](https://docs.lyzr.ai/lyzr-adk/agents/running-agents.md): Execute agents and handle responses
+- [Contexts](https://docs.lyzr.ai/lyzr-adk/contexts/contexts.md): Provide background information to agents
+- [Exceptions](https://docs.lyzr.ai/lyzr-adk/exceptions/exceptions.md): Error handling and exception types in the Lyzr ADK
+- [File Generation](https://docs.lyzr.ai/lyzr-adk/file-image-output/file-generation.md): Generate documents and files with agents
+- [Image Generation](https://docs.lyzr.ai/lyzr-adk/file-image-output/image-generation.md): Generate images with agents using Gemini or DALL-E
+- [File & Image Output Overview](https://docs.lyzr.ai/lyzr-adk/file-image-output/overview.md): Generate files and images with agents
+- [Adding Documents](https://docs.lyzr.ai/lyzr-adk/knowledge-bases/adding-documents.md): Add PDFs, websites, and other content to knowledge bases
+- [Creating Knowledge Bases](https://docs.lyzr.ai/lyzr-adk/knowledge-bases/creating-kb.md): Create and configure knowledge bases for RAG
+- [Managing Knowledge Bases](https://docs.lyzr.ai/lyzr-adk/knowledge-bases/managing-kb.md): Update, delete, and manage knowledge base documents
+- [Knowledge Bases Overview](https://docs.lyzr.ai/lyzr-adk/knowledge-bases/overview.md): Build RAG-powered agents with knowledge bases
+- [Querying Knowledge Bases](https://docs.lyzr.ai/lyzr-adk/knowledge-bases/querying.md): Search and retrieve content from knowledge bases
+- [Agent Memory](https://docs.lyzr.ai/lyzr-adk/memory/agent-memory.md): Configure conversation memory for agents
+- [Memory Overview](https://docs.lyzr.ai/lyzr-adk/memory/overview.md): Enable conversation memory for agents
+- [Lyzr ADK Overview](https://docs.lyzr.ai/lyzr-adk/overview.md): Get started with the Lyzr Agent Development Kit (ADK) for building AI agents
+- [Providers & Models](https://docs.lyzr.ai/lyzr-adk/providers/providers.md): Supported LLM providers and models in the Lyzr ADK
+- [Creating RAI Policies](https://docs.lyzr.ai/lyzr-adk/rai-guardrails/creating-policies.md): Create and manage RAI guardrail policies
+- [RAI Guardrails Overview](https://docs.lyzr.ai/lyzr-adk/rai-guardrails/overview.md): Responsible AI guardrails for safe agent behavior
+- [RAI Features](https://docs.lyzr.ai/lyzr-adk/rai-guardrails/rai-features.md): Detailed guide to RAI guardrail features
+- [Response Types](https://docs.lyzr.ai/lyzr-adk/responses/responses.md): Response objects returned by agent execution
+- [Streaming Responses](https://docs.lyzr.ai/lyzr-adk/streaming/streaming.md): Stream agent responses in real-time
+- [Structured Outputs](https://docs.lyzr.ai/lyzr-adk/structured-outputs/structured-outputs.md): Get type-safe responses using Pydantic models
+- [Studio](https://docs.lyzr.ai/lyzr-adk/studio.md): The main entry point for the Lyzr ADK
+- [Creating Tools](https://docs.lyzr.ai/lyzr-adk/tools/creating-tools.md): Create local tools for agent execution
+- [Tools Overview](https://docs.lyzr.ai/lyzr-adk/tools/overview.md): Enable agents to execute local functions
+- [Tool Execution](https://docs.lyzr.ai/lyzr-adk/tools/tool-execution.md): How tools are executed and error handling
+- [Expressions & data flow](https://docs.lyzr.ai/superflow/expressions.md)
+- [Node reference](https://docs.lyzr.ai/superflow/node-reference.md)
+- [Build your first SuperFlow](https://docs.lyzr.ai/superflow/quickstart.md)
+- [Reliability & durable execution](https://docs.lyzr.ai/superflow/reliability.md)
+- [Running, monitoring & approvals](https://docs.lyzr.ai/superflow/running-and-approvals.md)
+- [Triggers & schedules](https://docs.lyzr.ai/superflow/triggers-and-schedules.md)
+- [What is SuperFlow](https://docs.lyzr.ai/superflow/what-is-superflow.md)
+
+## OpenAPI Specs
+
+- [parsedocx](https://docs.lyzr.ai/openapi/parsedocx.yaml)
+- [updateagent](https://docs.lyzr.ai/openapi/updateagent.yaml)
+- [createagent](https://docs.lyzr.ai/openapi/createagent.yaml)
+- [voice_create_agent](https://docs.lyzr.ai/openapi/voice_create_agent.yaml)
+- [voice_agent_voice_providers](https://docs.lyzr.ai/openapi/voice_agent_voice_providers.yaml)
+- [voice_agent_version](https://docs.lyzr.ai/openapi/voice_agent_version.yaml)
+- [voice_agent_unshare](https://docs.lyzr.ai/openapi/voice_agent_unshare.yaml)
+- [voice_agent_tts](https://docs.lyzr.ai/openapi/voice_agent_tts.yaml)
+- [voice_agent_transcripts](https://docs.lyzr.ai/openapi/voice_agent_transcripts.yaml)
+- [voice_agent_traces_list](https://docs.lyzr.ai/openapi/voice_agent_traces_list.yaml)
+- [voice_agent_stream_preview](https://docs.lyzr.ai/openapi/voice_agent_stream_preview.yaml)
+- [voice_agent_stream_audio](https://docs.lyzr.ai/openapi/voice_agent_stream_audio.yaml)
+- [voice_agent_stats](https://docs.lyzr.ai/openapi/voice_agent_stats.yaml)
+- [voice_agent_share](https://docs.lyzr.ai/openapi/voice_agent_share.yaml)
+- [voice_agent_list_transcripts_by_agent](https://docs.lyzr.ai/openapi/voice_agent_list_transcripts_by_agent.yaml)
+- [voice_agent_list_shares](https://docs.lyzr.ai/openapi/voice_agent_list_shares.yaml)
+- [voice_agent_list_pipeline](https://docs.lyzr.ai/openapi/voice_agent_list_pipeline.yaml)
+- [voice_agent_list_options](https://docs.lyzr.ai/openapi/voice_agent_list_options.yaml)
+- [voice_agent_list](https://docs.lyzr.ai/openapi/voice_agent_list.yaml)
+- [voice_agent_get_transcripts](https://docs.lyzr.ai/openapi/voice_agent_get_transcripts.yaml)
+- [voice_agent_get_traces](https://docs.lyzr.ai/openapi/voice_agent_get_traces.yaml)
+- [voice_agent_get](https://docs.lyzr.ai/openapi/voice_agent_get.yaml)
+- [voice_agent_delete](https://docs.lyzr.ai/openapi/voice_agent_delete.yaml)
+- [voice_agent_activate_version](https://docs.lyzr.ai/openapi/voice_agent_activate_version.yaml)
+- [sessionsummary](https://docs.lyzr.ai/openapi/sessionsummary.yaml)
+- [sessionretrieval](https://docs.lyzr.ai/openapi/sessionretrieval.yaml)
+- [published](https://docs.lyzr.ai/openapi/published.yaml)
+- [getsessionhistory](https://docs.lyzr.ai/openapi/getsessionhistory.yaml)
+- [gethistory](https://docs.lyzr.ai/openapi/gethistory.yaml)
+- [fullconversation](https://docs.lyzr.ai/openapi/fullconversation.yaml)
+- [trainwebsite](https://docs.lyzr.ai/openapi/trainwebsite.yaml)
+- [traintxt](https://docs.lyzr.ai/openapi/traintxt.yaml)
+- [resetrag](https://docs.lyzr.ai/openapi/resetrag.yaml)
+- [ragretrieve](https://docs.lyzr.ai/openapi/ragretrieve.yaml)
+- [ragdocs](https://docs.lyzr.ai/openapi/ragdocs.yaml)
+- [ragconfig](https://docs.lyzr.ai/openapi/ragconfig.yaml)
+- [parsewebsite](https://docs.lyzr.ai/openapi/parsewebsite.yaml)
+- [parsetext](https://docs.lyzr.ai/openapi/parsetext.yaml)
+- [parsepdf](https://docs.lyzr.ai/openapi/parsepdf.yaml)
+- [parsecsv](https://docs.lyzr.ai/openapi/parsecsv.yaml)
+- [kgvisualization](https://docs.lyzr.ai/openapi/kgvisualization.yaml)
+- [kgtraintext](https://docs.lyzr.ai/openapi/kgtraintext.yaml)
+- [kgtraintask](https://docs.lyzr.ai/openapi/kgtraintask.yaml)
+- [kgtaskstatus](https://docs.lyzr.ai/openapi/kgtaskstatus.yaml)
+- [deduplicate](https://docs.lyzr.ai/openapi/deduplicate.yaml)
+- [trainragtxt](https://docs.lyzr.ai/openapi/trainragtxt.yaml)
+- [trainragpdf](https://docs.lyzr.ai/openapi/trainragpdf.yaml)
+- [trainragdocx](https://docs.lyzr.ai/openapi/trainragdocx.yaml)
+- [kgtrainwebpage](https://docs.lyzr.ai/openapi/kgtrainwebpage.yaml)
+- [kgtrain](https://docs.lyzr.ai/openapi/kgtrain.yaml)
+- [agent_multimodal](https://docs.lyzr.ai/openapi/agent_multimodal.yaml)
+- [updaterag](https://docs.lyzr.ai/openapi/updaterag.yaml)
+- [getragconfig](https://docs.lyzr.ai/openapi/getragconfig.yaml)
+- [deleterag](https://docs.lyzr.ai/openapi/deleterag.yaml)
+- [createrag](https://docs.lyzr.ai/openapi/createrag.yaml)
+- [workflow_update](https://docs.lyzr.ai/openapi/workflow_update.yaml)
+- [workflow_get_id](https://docs.lyzr.ai/openapi/workflow_get_id.yaml)
+- [workflow_get](https://docs.lyzr.ai/openapi/workflow_get.yaml)
+- [workflow_execute](https://docs.lyzr.ai/openapi/workflow_execute.yaml)
+- [workflow_delete](https://docs.lyzr.ai/openapi/workflow_delete.yaml)
+- [workflow_create](https://docs.lyzr.ai/openapi/workflow_create.yaml)
+- [semantic_task_status](https://docs.lyzr.ai/openapi/semantic_task_status.yaml)
+- [semantic_table_prev](https://docs.lyzr.ai/openapi/semantic_table_prev.yaml)
+- [semantic_table_names](https://docs.lyzr.ai/openapi/semantic_table_names.yaml)
+- [semantic_rag_db](https://docs.lyzr.ai/openapi/semantic_rag_db.yaml)
+- [semantic_doc_task_save](https://docs.lyzr.ai/openapi/semantic_doc_task_save.yaml)
+- [semantic_doc_save](https://docs.lyzr.ai/openapi/semantic_doc_save.yaml)
+- [semantic_doc](https://docs.lyzr.ai/openapi/semantic_doc.yaml)
+- [semantic_createdoc](https://docs.lyzr.ai/openapi/semantic_createdoc.yaml)
+- [kb](https://docs.lyzr.ai/openapi/kb.yaml)
+- [agent_version](https://docs.lyzr.ai/openapi/agent_version.yaml)
+- [agent_stream](https://docs.lyzr.ai/openapi/agent_stream.yaml)
+- [agent_specific_version](https://docs.lyzr.ai/openapi/agent_specific_version.yaml)
+- [agent_get_llms](https://docs.lyzr.ai/openapi/agent_get_llms.yaml)
+- [agent_chat](https://docs.lyzr.ai/openapi/agent_chat.yaml)
+- [updatetoolendpoint](https://docs.lyzr.ai/openapi/updatetoolendpoint.yaml)
+- [updatetoolcredential](https://docs.lyzr.ai/openapi/updatetoolcredential.yaml)
+- [toxicity](https://docs.lyzr.ai/openapi/toxicity.yaml)
+- [toggletool](https://docs.lyzr.ai/openapi/toggletool.yaml)
+- [singletaskagentupdate](https://docs.lyzr.ai/openapi/singletaskagentupdate.yaml)
+- [singletaskagent](https://docs.lyzr.ai/openapi/singletaskagent.yaml)
+- [raigetpolicy](https://docs.lyzr.ai/openapi/raigetpolicy.yaml)
+- [raicreatepolicy](https://docs.lyzr.ai/openapi/raicreatepolicy.yaml)
+- [promptinjection](https://docs.lyzr.ai/openapi/promptinjection.yaml)
+- [getusertools](https://docs.lyzr.ai/openapi/getusertools.yaml)
+- [gettoolopenapitoolinfo](https://docs.lyzr.ai/openapi/gettoolopenapitoolinfo.yaml)
+- [gettoolendpoint](https://docs.lyzr.ai/openapi/gettoolendpoint.yaml)
+- [getagentsbyapi](https://docs.lyzr.ai/openapi/getagentsbyapi.yaml)
+- [executetool](https://docs.lyzr.ai/openapi/executetool.yaml)
+- [deletetoolendpoint](https://docs.lyzr.ai/openapi/deletetoolendpoint.yaml)
+- [deletetoolcredential](https://docs.lyzr.ai/openapi/deletetoolcredential.yaml)
+- [deleteagent](https://docs.lyzr.ai/openapi/deleteagent.yaml)
+- [createtoolopenapi](https://docs.lyzr.ai/openapi/createtoolopenapi.yaml)
+- [createtoolcredential](https://docs.lyzr.ai/openapi/createtoolcredential.yaml)
+- [agents](https://docs.lyzr.ai/openapi/agents.yaml)
+- [openapi](https://docs.lyzr.ai/api-reference/openapi.json)
+
+## Optional
+
+- [Visit Studio - Agent Builder](https://studio.lyzr.ai)
+- [Join Discord](https://discord.gg/uaHrgJQxAv)
