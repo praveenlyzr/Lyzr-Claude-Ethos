@@ -56,8 +56,8 @@ Recipes & SDK / platform / context:
 Every Lyzr doc page is available as **raw markdown by appending `.md`** to its URL (no auth).
 So nothing in the docs is ever out of reach:
 ```bash
-python3 .claude/skills/lyzr-agents/scripts/lyzr.py docs "agent-apis/agents/Create Agent"  # by path
-python3 .claude/skills/lyzr-agents/scripts/lyzr.py docs index                               # the full llms.txt index
+python3 ${CLAUDE_PLUGIN_ROOT}/skills/lyzr-agents/scripts/lyzr.py docs "agent-apis/agents/Create Agent"  # by path
+python3 ${CLAUDE_PLUGIN_ROOT}/skills/lyzr-agents/scripts/lyzr.py docs index                               # the full llms.txt index
 # or directly:  curl -s "https://docs.lyzr.ai/<path>.md"   /   WebFetch the same URL
 ```
 `reference/docs-index.md` is a bundled snapshot of the full index (title → URL → description)
@@ -70,41 +70,46 @@ source ~/.zshrc
 curl -s "https://agent-prod.studio.lyzr.ai/v3/agents/" -H "x-api-key: $LYZR_API_KEY" | python3 -m json.tool | head
 ```
 
+> **Script paths:** examples use `${CLAUDE_PLUGIN_ROOT}` — Claude Code sets this to the
+> plugin's install directory, so the commands work wherever the plugin is installed. If you're
+> running from a clone of the repo instead, substitute the repo root for `${CLAUDE_PLUGIN_ROOT}`
+> (e.g. `python3 skills/lyzr-agents/scripts/lyzr.py …`).
+
 ## Helper CLI (preferred)
 
 `scripts/lyzr.py` wraps every verified operation. Prefer it over raw curl for anything multi-field.
 
 ```bash
-python3 .claude/skills/lyzr-agents/scripts/lyzr.py list
-python3 .claude/skills/lyzr-agents/scripts/lyzr.py get <agent_id>
-python3 .claude/skills/lyzr-agents/scripts/lyzr.py create --file agent.json
-python3 .claude/skills/lyzr-agents/scripts/lyzr.py update <agent_id> --file agent.json
-python3 .claude/skills/lyzr-agents/scripts/lyzr.py delete <agent_id>
-python3 .claude/skills/lyzr-agents/scripts/lyzr.py chat <agent_id> "your message" [--session S] [--stream]
-python3 .claude/skills/lyzr-agents/scripts/lyzr.py models   # known provider/model/cred combos
+python3 ${CLAUDE_PLUGIN_ROOT}/skills/lyzr-agents/scripts/lyzr.py list
+python3 ${CLAUDE_PLUGIN_ROOT}/skills/lyzr-agents/scripts/lyzr.py get <agent_id>
+python3 ${CLAUDE_PLUGIN_ROOT}/skills/lyzr-agents/scripts/lyzr.py create --file agent.json
+python3 ${CLAUDE_PLUGIN_ROOT}/skills/lyzr-agents/scripts/lyzr.py update <agent_id> --file agent.json
+python3 ${CLAUDE_PLUGIN_ROOT}/skills/lyzr-agents/scripts/lyzr.py delete <agent_id>
+python3 ${CLAUDE_PLUGIN_ROOT}/skills/lyzr-agents/scripts/lyzr.py chat <agent_id> "your message" [--session S] [--stream]
+python3 ${CLAUDE_PLUGIN_ROOT}/skills/lyzr-agents/scripts/lyzr.py models   # known provider/model/cred combos
 
 # read-side helpers (all verified live)
-python3 .claude/skills/lyzr-agents/scripts/lyzr.py versions <agent_id>
-python3 .claude/skills/lyzr-agents/scripts/lyzr.py sessions <agent_id>
-python3 .claude/skills/lyzr-agents/scripts/lyzr.py history <session_id> [--agent <agent_id>]
-python3 .claude/skills/lyzr-agents/scripts/lyzr.py rag-list [--user <id>]
-python3 .claude/skills/lyzr-agents/scripts/lyzr.py rag-get <rag_id>
-python3 .claude/skills/lyzr-agents/scripts/lyzr.py rag-retrieve <rag_id> "query" [--top-k N] [--type basic|mmr|hyde|time_aware]
+python3 ${CLAUDE_PLUGIN_ROOT}/skills/lyzr-agents/scripts/lyzr.py versions <agent_id>
+python3 ${CLAUDE_PLUGIN_ROOT}/skills/lyzr-agents/scripts/lyzr.py sessions <agent_id>
+python3 ${CLAUDE_PLUGIN_ROOT}/skills/lyzr-agents/scripts/lyzr.py history <session_id> [--agent <agent_id>]
+python3 ${CLAUDE_PLUGIN_ROOT}/skills/lyzr-agents/scripts/lyzr.py rag-list [--user <id>]
+python3 ${CLAUDE_PLUGIN_ROOT}/skills/lyzr-agents/scripts/lyzr.py rag-get <rag_id>
+python3 ${CLAUDE_PLUGIN_ROOT}/skills/lyzr-agents/scripts/lyzr.py rag-retrieve <rag_id> "query" [--top-k N] [--type basic|mmr|hyde|time_aware]
 # RAG write side (verified end-to-end):
-python3 .claude/skills/lyzr-agents/scripts/lyzr.py rag-create <collection_name> [--user <id>]
-python3 .claude/skills/lyzr-agents/scripts/lyzr.py rag-train <rag_id> <file> [--kind txt|pdf|docx]
-python3 .claude/skills/lyzr-agents/scripts/lyzr.py rag-reset <rag_id>
-python3 .claude/skills/lyzr-agents/scripts/lyzr.py rag-delete <rag_id>
-python3 .claude/skills/lyzr-agents/scripts/lyzr.py workflows
-python3 .claude/skills/lyzr-agents/scripts/lyzr.py workflow-get <flow_id>
-python3 .claude/skills/lyzr-agents/scripts/lyzr.py workflow-delete <flow_id>
-python3 .claude/skills/lyzr-agents/scripts/lyzr.py ready-tools             # Composio/aci tool catalog
-python3 .claude/skills/lyzr-agents/scripts/lyzr.py tool-delete <tool_id>
-python3 .claude/skills/lyzr-agents/scripts/lyzr.py voice-list              # voice agents
-python3 .claude/skills/lyzr-agents/scripts/lyzr.py rai-policies            # list RAI policies
-python3 .claude/skills/lyzr-agents/scripts/lyzr.py rai-injection "text"   # prompt-injection check
-python3 .claude/skills/lyzr-agents/scripts/lyzr.py rai-toxicity  "text"   # toxicity check
-python3 .claude/skills/lyzr-agents/scripts/lyzr.py docs "<path|url|index>"  # fallback: fetch any doc page
+python3 ${CLAUDE_PLUGIN_ROOT}/skills/lyzr-agents/scripts/lyzr.py rag-create <collection_name> [--user <id>]
+python3 ${CLAUDE_PLUGIN_ROOT}/skills/lyzr-agents/scripts/lyzr.py rag-train <rag_id> <file> [--kind txt|pdf|docx]
+python3 ${CLAUDE_PLUGIN_ROOT}/skills/lyzr-agents/scripts/lyzr.py rag-reset <rag_id>
+python3 ${CLAUDE_PLUGIN_ROOT}/skills/lyzr-agents/scripts/lyzr.py rag-delete <rag_id>
+python3 ${CLAUDE_PLUGIN_ROOT}/skills/lyzr-agents/scripts/lyzr.py workflows
+python3 ${CLAUDE_PLUGIN_ROOT}/skills/lyzr-agents/scripts/lyzr.py workflow-get <flow_id>
+python3 ${CLAUDE_PLUGIN_ROOT}/skills/lyzr-agents/scripts/lyzr.py workflow-delete <flow_id>
+python3 ${CLAUDE_PLUGIN_ROOT}/skills/lyzr-agents/scripts/lyzr.py ready-tools             # Composio/aci tool catalog
+python3 ${CLAUDE_PLUGIN_ROOT}/skills/lyzr-agents/scripts/lyzr.py tool-delete <tool_id>
+python3 ${CLAUDE_PLUGIN_ROOT}/skills/lyzr-agents/scripts/lyzr.py voice-list              # voice agents
+python3 ${CLAUDE_PLUGIN_ROOT}/skills/lyzr-agents/scripts/lyzr.py rai-policies            # list RAI policies
+python3 ${CLAUDE_PLUGIN_ROOT}/skills/lyzr-agents/scripts/lyzr.py rai-injection "text"   # prompt-injection check
+python3 ${CLAUDE_PLUGIN_ROOT}/skills/lyzr-agents/scripts/lyzr.py rai-toxicity  "text"   # toxicity check
+python3 ${CLAUDE_PLUGIN_ROOT}/skills/lyzr-agents/scripts/lyzr.py docs "<path|url|index>"  # fallback: fetch any doc page
 ```
 The script targets the right host automatically (agent-prod / rag-prod / rai-prod / voice).
 
@@ -222,7 +227,7 @@ Verified end-to-end (`reference/rag.md` has full detail; `scripts/rag_smoke_test
 17-check living test of this exact flow):
 
 ```bash
-S=.claude/skills/lyzr-agents/scripts/lyzr.py
+S=${CLAUDE_PLUGIN_ROOT}/skills/lyzr-agents/scripts/lyzr.py
 RID=$(python3 $S rag-create my_kb | python3 -c "import sys,json;print(json.load(sys.stdin)['id'])")
 python3 $S rag-train "$RID" ./docs.txt          # or --kind pdf|docx
 # then create an agent with a KNOWLEDGE_BASE feature pointing at $RID
@@ -232,7 +237,7 @@ The agent retrieves from the KB automatically at chat time. Confirmed it answers
 KB-only facts, pulls across multiple ingested docs, and says "I don't know" for facts
 absent from the KB (no hallucination). Run the smoke test anytime to re-verify:
 ```bash
-LYZR_USER_ID="you@example.com" bash .claude/skills/lyzr-agents/scripts/rag_smoke_test.sh
+LYZR_USER_ID="you@example.com" bash ${CLAUDE_PLUGIN_ROOT}/skills/lyzr-agents/scripts/rag_smoke_test.sh
 ```
 
 ## Gotchas

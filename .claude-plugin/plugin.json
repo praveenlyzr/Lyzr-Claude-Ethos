@@ -1,0 +1,22 @@
+{
+  "name": "lyzr-agents",
+  "version": "1.0.0",
+  "description": "Build, configure, run, and edit Lyzr AI agents via the Lyzr Agent Studio API. Agent CRUD, chat/streaming, structured output, RAG knowledge bases, tools, workflows, multi-agent managers, voice agents, and responsible-AI guardrails — with live-verified API references and helper scripts.",
+  "author": {
+    "name": "Praveen",
+    "email": "praveen@lyzr.ai",
+    "url": "https://github.com/praveenlyzr"
+  },
+  "homepage": "https://github.com/praveenlyzr/Lyzr-Claude-Ethos",
+  "repository": "https://github.com/praveenlyzr/Lyzr-Claude-Ethos",
+  "license": "MIT",
+  "keywords": [
+    "lyzr",
+    "agents",
+    "ai-agents",
+    "agent-studio",
+    "rag",
+    "llm",
+    "api"
+  ]
+}

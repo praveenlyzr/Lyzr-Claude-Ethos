@@ -1,0 +1,27 @@
+{
+  "name": "lyzr",
+  "description": "Lyzr plugins for Claude Code — build and operate Lyzr AI agents.",
+  "version": "1.0.0",
+  "owner": {
+    "name": "Praveen",
+    "email": "praveen@lyzr.ai",
+    "url": "https://github.com/praveenlyzr"
+  },
+  "plugins": [
+    {
+      "name": "lyzr-agents",
+      "source": ".",
+      "description": "Build, configure, run, and edit Lyzr AI agents via the Lyzr Agent Studio API — agent CRUD, chat/streaming, structured output, RAG, tools, workflows, multi-agent managers, voice, and responsible-AI guardrails. Live-verified references + helper scripts.",
+      "version": "1.0.0",
+      "author": {
+        "name": "Praveen",
+        "email": "praveen@lyzr.ai"
+      },
+      "homepage": "https://github.com/praveenlyzr/Lyzr-Claude-Ethos",
+      "repository": "https://github.com/praveenlyzr/Lyzr-Claude-Ethos",
+      "license": "MIT",
+      "category": "development",
+      "keywords": ["lyzr", "agents", "ai-agents", "rag", "agent-studio"]
+    }
+  ]
+}

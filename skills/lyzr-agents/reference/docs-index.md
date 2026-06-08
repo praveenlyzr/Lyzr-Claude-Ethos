@@ -7,7 +7,7 @@ as **raw markdown by appending `.md`** to its URL — that's the last-resort loo
 # fetch any page (no auth needed):
 curl -s "https://docs.lyzr.ai/<path>.md"
 # or via the helper:
-python3 .claude/skills/lyzr-agents/scripts/lyzr.py docs "<path-or-url>"
+python3 ${CLAUDE_PLUGIN_ROOT}/skills/lyzr-agents/scripts/lyzr.py docs "<path-or-url>"
 ```
 The intro page also points to the canonical index at https://docs.lyzr.ai/llms.txt
 (re-fetch it if these links go stale). Full current index below (title → URL: description).

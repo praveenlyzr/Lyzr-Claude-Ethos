@@ -1,12 +1,26 @@
-# lyzr-claude-ethos
+# Lyzr-Claude-Ethos
 
-A Claude Code **skill** for building, running, and editing [Lyzr](https://lyzr.ai) AI agents
-via the Lyzr Agent Studio API.
+A Claude Code **plugin** (and one-plugin **marketplace**) that ships the `lyzr-agents` skill
+for building, running, and editing [Lyzr](https://lyzr.ai) AI agents via the Lyzr Agent Studio API.
+
+## Install
+
+```bash
+# in Claude Code:
+/plugin marketplace add praveenlyzr/Lyzr-Claude-Ethos
+/plugin install lyzr-agents@lyzr
+```
+Then set your key (see [SETUP.md](SETUP.md)) and the skill activates automatically when you
+ask Claude to work with Lyzr agents. To try it from a local clone instead:
+`/plugin marketplace add ./Lyzr-Claude-Ethos`.
 
 ## What's here
 
 ```
-.claude/skills/lyzr-agents/
+.claude-plugin/
+├── marketplace.json                  # marketplace manifest (name: "lyzr")
+└── plugin.json                       # plugin manifest (name: "lyzr-agents")
+skills/lyzr-agents/
 ├── SKILL.md                          # The skill: verified API reference + multi-host map
 ├── scripts/
 │   ├── lyzr.py                       # CLI: agents CRUD, chat, sessions, versions, rag, workflows, RAI, docs
@@ -44,23 +58,25 @@ Lyzr spans **five hosts** — `agent-prod` (agents/chat/tools/workflows + sessio
 Anything not pre-captured is reachable via the docs fallback: `lyzr.py docs "<path>"` (every
 doc page is raw markdown at `<url>.md`).
 
-## Quick start
+## Quick start (helper CLI)
 
 First time? See **[SETUP.md](SETUP.md)** for how to get your API key from Lyzr Studio and
-set `LYZR_API_KEY` as an environment variable (macOS, Linux, Windows). Then:
+set `LYZR_API_KEY` as an environment variable (macOS, Linux, Windows). Then, from a clone:
 
 ```bash
 source ~/.zshrc   # loads LYZR_API_KEY (or however you set it — see SETUP.md)
-S=.claude/skills/lyzr-agents/scripts/lyzr.py
+S=skills/lyzr-agents/scripts/lyzr.py
 
 python3 $S list                                   # list your agents
-python3 $S create --file .claude/skills/lyzr-agents/examples/basic-agent.json
+python3 $S create --file skills/lyzr-agents/examples/basic-agent.json
 python3 $S chat <agent_id> "hello"                # talk to it
 python3 $S chat <agent_id> "hello" --stream       # SSE streaming
 python3 $S delete <agent_id>
 ```
+When installed as a plugin, the same scripts live at
+`${CLAUDE_PLUGIN_ROOT}/skills/lyzr-agents/scripts/`.
 
-See `.claude/skills/lyzr-agents/SKILL.md` for the full, verified API reference.
+See `skills/lyzr-agents/SKILL.md` for the full, verified API reference.
 
 ## Status
 
