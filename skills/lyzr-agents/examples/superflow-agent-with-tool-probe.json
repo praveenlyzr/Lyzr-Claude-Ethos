@@ -1,0 +1,80 @@
+{
+  "name": "Agent-with-tool probe",
+  "nodes": [
+    {
+      "id": "n0",
+      "name": "Trigger",
+      "type": "lyzr-nodes-base.trigger",
+      "parameters": {
+        "inputSchema": [
+          { "name": "chatInput", "type": "string", "required": true, "multiline": true, "description": "Ask for a coin's price" }
+        ]
+      },
+      "position": [120, 240]
+    },
+    {
+      "id": "n1",
+      "name": "Strategist",
+      "type": "lyzr-nodes-base.lyzr.llm",
+      "parameters": {
+        "model": "gpt-4o-mini",
+        "provider": "openai",
+        "prompt": "={{ $json.chatInput }}",
+        "maxTokens": 1024,
+        "temperature": 0.3,
+        "systemPrompt": "You have one sub-agent: the Price Agent. When the user needs a coin's price, ask the Price Agent for it, then answer the user using what it returns. Do not invent prices."
+      },
+      "position": [400, 240]
+    },
+    {
+      "id": "n2",
+      "name": "Price Agent",
+      "type": "lyzr-nodes-base.lyzr.llm",
+      "parameters": {
+        "model": "gpt-4o-mini",
+        "provider": "openai",
+        "maxTokens": 512,
+        "temperature": 0.1,
+        "isSubAgent": true,
+        "description": "Fetches the current crypto price using its CoinGecko tool and returns it.",
+        "systemPrompt": "When asked for a price, CALL your CoinGecko tool to fetch live market data, then report the current USD price. Do not guess."
+      },
+      "position": [680, 120]
+    },
+    {
+      "id": "n3",
+      "name": "CoinGecko Markets",
+      "type": "lyzr-nodes-base.lyzr.tool",
+      "parameters": {
+        "arguments": { "vs_currency": "usd", "ids": "bitcoin" },
+        "tool_name": "openapi-CoinGeckoMarkets-getCoinMarkets",
+        "_isConnected": false,
+        "tool_configs": [
+          { "tool_name": "openapi-CoinGeckoMarkets-getCoinMarkets", "tool_source": "openapi", "action_names": ["openapi-CoinGeckoMarkets-getCoinMarkets"], "persist_auth": true, "credential_id": "", "provider_uuid": "6a2c802caf58417e5bf632eb" }
+        ],
+        "_selectedTool": "6a2c802caf58417e5bf632eb",
+        "_noAuthRequired": true,
+        "action_schema": {
+          "type": "object",
+          "visible": ["vs_currency", "ids"],
+          "required": ["vs_currency", "ids"],
+          "properties": { "vs_currency": { "type": "string" }, "ids": { "type": "string" } },
+          "additionalProperties": false
+        }
+      },
+      "position": [960, 120]
+    },
+    {
+      "id": "n4",
+      "name": "Output",
+      "type": "lyzr-nodes-base.noOp",
+      "parameters": { "outputField": "output", "outputSourceNode": "Strategist" },
+      "position": [960, 360]
+    }
+  ],
+  "connections": {
+    "Trigger": { "main": [[{ "node": "Strategist", "type": "main", "index": 0 }]] },
+    "Strategist": { "main": [[ { "node": "Price Agent", "type": "main", "index": 0 }, { "node": "Output", "type": "main", "index": 0 } ]] },
+    "Price Agent": { "main": [[ { "node": "CoinGecko Markets", "type": "main", "index": 0 } ]] }
+  }
+}
