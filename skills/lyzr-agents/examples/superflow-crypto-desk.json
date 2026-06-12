@@ -65,7 +65,7 @@
       "parameters": {
         "tool_name": "openapi-CoinGeckoMarkets-getCoinMarkets",
         "tool_configs": [ { "tool_name": "openapi-CoinGeckoMarkets-getCoinMarkets", "tool_source": "openapi", "credential_id": "", "provider_uuid": "6a2c802caf58417e5bf632eb", "action_names": ["openapi-CoinGeckoMarkets-getCoinMarkets"], "persist_auth": true } ],
-        "arguments": {}, "_selectedTool": "6a2c802caf58417e5bf632eb", "_isConnected": false, "_noAuthRequired": true,
+        "arguments": { "vs_currency": "usd", "ids": "bitcoin,ethereum,solana" }, "_selectedTool": "6a2c802caf58417e5bf632eb", "_isConnected": false, "_noAuthRequired": true,
         "action_schema": { "type": "object", "visible": ["vs_currency", "ids", "price_change_percentage"], "required": ["vs_currency", "ids"],
           "properties": { "vs_currency": { "type": "string", "description": "Fiat currency, e.g. usd" }, "ids": { "type": "string", "description": "Comma-separated coin ids, e.g. bitcoin,ethereum" }, "price_change_percentage": { "type": "string", "description": "e.g. 1h,24h,7d" } }, "additionalProperties": false }
       },

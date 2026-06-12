@@ -70,6 +70,15 @@ Sub-agent (callable BY the orchestrator — add `isSubAgent: true` + a `descript
 - No-auth tools: `credential_id: ""`, `_noAuthRequired: true`. OAuth tools: connect once in Studio, then set `credential_id`.
 - `action_schema` mirrors the action's input params (see the CoinGecko example).
 
+⚠️ **`arguments` must contain every REQUIRED param, or the call fails (verified).** The tool
+executor sends ONLY what's in `arguments` — it does **not** apply OpenAPI schema defaults or a
+query string baked into the path. So a node with `"arguments": {}` whose API has a required
+param 4xx's (e.g. CoinGecko `/coins/markets` → 422 "Missing parameter vs_currency", surfaced as
+a 400). HACKERNEWS works with empty `arguments` only because it has no required params.
+Fix: populate them, e.g. `"arguments": { "vs_currency": "usd", "ids": "bitcoin,ethereum,solana" }`.
+Prefer tools whose required inputs you can pin here; keep dynamic-but-optional inputs out of `required`.
+(Also: never set `isSubAgent`/`description` on a tool node — those belong on `lyzr.llm` sub-agents.)
+
 ### Output — `lyzr-nodes-base.noOp`
 ```json
 { "name": "Output", "type": "lyzr-nodes-base.noOp", "parameters": { "outputField": "output", "outputSourceNode": "Orchestrator" } }
