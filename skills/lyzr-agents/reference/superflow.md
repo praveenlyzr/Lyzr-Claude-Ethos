@@ -88,6 +88,22 @@ even a single optional, unused one (`"properties": { "_": { "type": "string" } }
 since CoinGecko-style APIs ignore unknown query params. Recreate the tool (new `provider_uuid`)
 with a non-empty schema and point the node at it.
 
+### Per-node reliability `settings` (verified from real exports)
+Any node can carry a sibling `settings` block (next to `parameters`) for durable retry/backoff:
+```json
+{ "type": "lyzr-nodes-base.lyzr.tool", "parameters": { ... },
+  "settings": { "retryOnFail": true, "backoff": "exponential" },   // backoff: "exponential" | "fixed"
+  "position": [x, y] }
+```
+A tool node can also set `"handleErrors": true` inside `parameters` to keep the flow running if the
+call fails. **Use retry/backoff on rate-limited APIs** — the free CoinGecko endpoints 429 under load,
+so `retryOnFail: true, backoff: "exponential"` materially helps the demo.
+
+⚠️ **Selecting a tool in the UI is not the same as configuring it.** A node can end up with
+`"_selectedTool": "<uuid>"` but `"tool_name": ""` and `"tool_configs": []` — that tool will NOT
+resolve at runtime. Always populate `tool_name` + a full `tool_configs[]` entry (matching the
+`_selectedTool` uuid). See the CoinGecko nodes in the example.
+
 ### Output — `lyzr-nodes-base.noOp`
 ```json
 { "name": "Output", "type": "lyzr-nodes-base.noOp", "parameters": { "outputField": "output", "outputSourceNode": "Orchestrator" } }

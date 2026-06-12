@@ -83,6 +83,7 @@
         },
         "_noAuthRequired": true
       },
+      "settings": { "retryOnFail": true, "backoff": "exponential" },
       "position": [217.74, 487.34]
     },
     {
@@ -100,6 +101,7 @@
         "action_schema": { "type": "object", "visible": [], "required": [], "properties": { "_": { "type": "string", "description": "unused (CoinGecko /global takes no params; this keeps the schema non-empty so SuperFlow registers the tool)" } }, "additionalProperties": false },
         "_noAuthRequired": true
       },
+      "settings": { "retryOnFail": true, "backoff": "exponential" },
       "position": [497.18, 581.36]
     },
     {
@@ -121,6 +123,7 @@
         },
         "_noAuthRequired": true
       },
+      "settings": { "retryOnFail": true, "backoff": "exponential" },
       "position": [772.09, 532.54]
     }
   ],
