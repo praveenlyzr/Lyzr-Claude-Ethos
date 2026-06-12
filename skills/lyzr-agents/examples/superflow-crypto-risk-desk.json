@@ -8,10 +8,10 @@
       "parameters": {
         "inputSchema": [
           { "name": "chatInput", "type": "string", "required": true, "multiline": true,
-            "description": "A coin or question, e.g. 'How risky is Solana right now?' or 'Bitcoin and Ethereum'" }
+            "description": "A coin or question, e.g. 'How risky is Solana right now?'" }
         ]
       },
-      "position": [120, 320]
+      "position": [120, 360]
     },
     {
       "id": "node_extract",
@@ -23,7 +23,7 @@
         "prompt": "={{ $json.chatInput }}",
         "maxTokens": 64,
         "temperature": 0,
-        "systemPrompt": "Extract the CoinGecko coin id(s) from the user's message as a lowercase comma-separated slug list (e.g. 'bitcoin', 'ethereum', 'bitcoin,solana'). Use canonical CoinGecko ids. If none is mentioned, return 'bitcoin'.",
+        "systemPrompt": "Identify the PRIMARY crypto coin the user is asking about. Return its CoinGecko id as a lowercase slug in coin_id (e.g. 'bitcoin', 'ethereum', 'solana') and its uppercase ticker symbol in symbol (e.g. 'BTC', 'ETH', 'SOL'). If none is mentioned, default to bitcoin / BTC.",
         "responseFormat": {
           "type": "json_schema",
           "json_schema": {
@@ -31,18 +31,21 @@
             "strict": true,
             "schema": {
               "type": "object",
-              "required": ["coin_id"],
-              "properties": { "coin_id": { "type": "string", "description": "comma-separated CoinGecko ids" } },
+              "required": ["coin_id", "symbol"],
+              "properties": {
+                "coin_id": { "type": "string", "description": "CoinGecko id slug, e.g. bitcoin" },
+                "symbol": { "type": "string", "description": "Ticker, e.g. BTC" }
+              },
               "additionalProperties": false
             }
           }
         }
       },
-      "position": [380, 320]
+      "position": [360, 360]
     },
     {
-      "id": "node_fetch_price",
-      "name": "Fetch Price",
+      "id": "node_cg",
+      "name": "Fetch CoinGecko",
       "type": "lyzr-nodes-base.httpRequest",
       "parameters": {
         "url": "=https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids={{ $('Extract Coin').json.output.coin_id }}&price_change_percentage=24h",
@@ -50,10 +53,22 @@
         "sendHeaders": false
       },
       "settings": { "retryOnFail": true, "backoff": "exponential" },
-      "position": [640, 160]
+      "position": [620, 140]
     },
     {
-      "id": "node_fetch_global",
+      "id": "node_coinbase",
+      "name": "Fetch Coinbase",
+      "type": "lyzr-nodes-base.httpRequest",
+      "parameters": {
+        "url": "=https://api.coinbase.com/v2/prices/{{ $('Extract Coin').json.output.symbol }}-USD/spot",
+        "method": "GET",
+        "sendHeaders": false
+      },
+      "settings": { "retryOnFail": true, "backoff": "exponential" },
+      "position": [620, 300]
+    },
+    {
+      "id": "node_global",
       "name": "Fetch Global",
       "type": "lyzr-nodes-base.httpRequest",
       "parameters": {
@@ -62,10 +77,10 @@
         "sendHeaders": false
       },
       "settings": { "retryOnFail": true, "backoff": "exponential" },
-      "position": [640, 320]
+      "position": [620, 460]
     },
     {
-      "id": "node_fetch_sentiment",
+      "id": "node_sentiment",
       "name": "Fetch Sentiment",
       "type": "lyzr-nodes-base.httpRequest",
       "parameters": {
@@ -74,36 +89,55 @@
         "sendHeaders": false
       },
       "settings": { "retryOnFail": true, "backoff": "exponential" },
-      "position": [640, 480]
+      "position": [620, 620]
     },
     {
-      "id": "node_analyst",
-      "name": "Risk Analyst",
+      "id": "node_strategist",
+      "name": "Risk Strategist",
       "type": "lyzr-nodes-base.lyzr.llm",
       "parameters": {
         "model": "gpt-4o-mini",
         "provider": "openai",
-        "prompt": "=Coin(s): {{ $('Extract Coin').json.output.coin_id }}\n\nPer-coin market data (CoinGecko):\n{{ $('Fetch Price').json.body }}\n\nGlobal market (CoinGecko):\n{{ $('Fetch Global').json.body }}\n\nFear & Greed index:\n{{ $('Fetch Sentiment').json.body }}",
-        "maxTokens": 2048,
-        "temperature": 0.3,
-        "systemPrompt": "You are a crypto risk desk analyst. You are given live data: per-coin market figures (price, 24h % change, 24h volume, market cap, ATH), the global market (total market cap, BTC dominance, 24h total-cap % change), and the Fear & Greed index (0-100 + label).\n\nWrite ONE concise desk brief with these sections:\n- Headline (one line)\n- Snapshot — per coin: price and 24h %\n- Market Regime — risk-on vs risk-off, from BTC dominance + total-cap trend + Fear & Greed\n- Risk Level — exactly one of Calm / Elevated / High, with a one-line rationale (High if any coin's |24h| >= 8% or Fear&Greed <=25 or >=80; Elevated if |24h| >= 4% or Fear&Greed <=40 or >=70; else Calm)\n- What to Watch — 2 bullets\n\nUse the real numbers, name each coin, and end with 'Not financial advice - always do your own research.'"
+        "prompt": "=User request: {{ $('Trigger').json.chatInput }}\nCoin: {{ $('Extract Coin').json.output.coin_id }} ({{ $('Extract Coin').json.output.symbol }})\n\nPRICE SOURCE A — CoinGecko markets:\n{{ $('Fetch CoinGecko').json.body }}\n\nPRICE SOURCE B — Coinbase spot:\n{{ $('Fetch Coinbase').json.body }}\n\nGlobal market (CoinGecko):\n{{ $('Fetch Global').json.body }}\n\nFear & Greed:\n{{ $('Fetch Sentiment').json.body }}",
+        "maxTokens": 2560,
+        "temperature": 0.4,
+        "systemPrompt": "You are a deliberate crypto risk strategist. You have ONE sub-agent: the Price Agent, whose job is to determine a trustworthy USD price.\n\nDo NOT decide the price yourself. Process:\n1. You are given price data from TWO independent sources (CoinGecko and Coinbase). Hand BOTH quotes to the Price Agent and ask it for a single trusted price.\n2. Read the Price Agent's verdict critically. If it reports a discrepancy, low confidence, or only one usable source, PUSH BACK: ask it to reconsider, explain which source is more reliable, or whether the price should be treated as uncertain. Go back and forth until you are genuinely confident — this is a debate, not a single question.\n3. Only after you trust a price do you write the brief.\n\nFinal output:\n- Headline (one line)\n- Price — the trusted figure, plus a one-line note on cross-source agreement/discrepancy and how you resolved it\n- Snapshot — 24h % change\n- Market Regime — risk-on/off from BTC dominance + total-cap trend + Fear & Greed\n- Risk Level — exactly one of Calm / Elevated / High, with a one-line rationale\n- What to Watch — 2 bullets\nEnd with 'Not financial advice - always do your own research.'"
       },
-      "position": [920, 320]
+      "position": [900, 360]
+    },
+    {
+      "id": "node_price_agent",
+      "name": "Price Agent",
+      "type": "lyzr-nodes-base.lyzr.llm",
+      "parameters": {
+        "model": "gpt-4o-mini",
+        "provider": "openai",
+        "maxTokens": 512,
+        "isSubAgent": true,
+        "description": "Reconcile a coin's USD price across one or more sources. Returns the single best price to trust, a confidence 0-1, and any cross-source discrepancy. Will reconsider honestly if challenged.",
+        "temperature": 0.1,
+        "systemPrompt": "You are a price-reconciliation specialist. Given USD price quotes for a coin from one or more sources (e.g. CoinGecko current_price and Coinbase spot amount), output: (1) the single best USD price to trust, (2) a confidence from 0.0 to 1.0, and (3) any discrepancy — if the sources differ by more than 0.5%, state both numbers, the % gap, and which you'd trust and why (e.g. deeper-liquidity or more-recent venue). If you only get one source, say so and lower confidence for the lack of a cross-check. Be terse and numeric. If the strategist challenges you, re-examine honestly rather than just agreeing."
+      },
+      "position": [1180, 180]
     },
     {
       "id": "node_output",
       "name": "Output",
       "type": "lyzr-nodes-base.noOp",
-      "parameters": { "outputField": "output", "outputSourceNode": "Risk Analyst" },
-      "position": [1200, 320]
+      "parameters": { "outputField": "output", "outputSourceNode": "Risk Strategist" },
+      "position": [1180, 460]
     }
   ],
   "connections": {
     "Trigger": { "main": [[{ "node": "Extract Coin", "type": "main", "index": 0 }]] },
-    "Extract Coin": { "main": [[{ "node": "Fetch Price", "type": "main", "index": 0 }]] },
-    "Fetch Price": { "main": [[{ "node": "Fetch Global", "type": "main", "index": 0 }]] },
+    "Extract Coin": { "main": [[{ "node": "Fetch CoinGecko", "type": "main", "index": 0 }]] },
+    "Fetch CoinGecko": { "main": [[{ "node": "Fetch Coinbase", "type": "main", "index": 0 }]] },
+    "Fetch Coinbase": { "main": [[{ "node": "Fetch Global", "type": "main", "index": 0 }]] },
     "Fetch Global": { "main": [[{ "node": "Fetch Sentiment", "type": "main", "index": 0 }]] },
-    "Fetch Sentiment": { "main": [[{ "node": "Risk Analyst", "type": "main", "index": 0 }]] },
-    "Risk Analyst": { "main": [[{ "node": "Output", "type": "main", "index": 0 }]] }
+    "Fetch Sentiment": { "main": [[{ "node": "Risk Strategist", "type": "main", "index": 0 }]] },
+    "Risk Strategist": { "main": [[
+      { "node": "Price Agent", "type": "main", "index": 0 },
+      { "node": "Output", "type": "main", "index": 0 }
+    ]] }
   }
 }
