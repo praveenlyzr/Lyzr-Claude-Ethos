@@ -183,10 +183,13 @@ For **plain agents** (not SuperFlow), runtime tool use still needs a `tool_confi
 `TOOL_CALLING` feature — see [`tools.md`](tools.md).
 
 ## Example in this skill
-- `examples/superflow-crypto-risk-desk.json` — the full, importable demo, **rebuilt on the official
-  `httpRequest` pattern**: Trigger → Extract Coin (`lyzr.llm` with `responseFormat`) → 3 live
-  `httpRequest` fetches (CoinGecko markets + global + alternative.me Fear&Greed, retry/backoff on
-  each) → Risk Analyst → Output. Dynamic: ask about any coin and it extracts the id and fetches it.
+- `examples/superflow-crypto-risk-desk.json` — the full, importable demo on the official
+  `httpRequest` pattern. **13 nodes:** Trigger → Extract Coin (`lyzr.llm` + `responseFormat`) →
+  **5 live `httpRequest` fetches** (CoinGecko markets + Coinbase spot + global + Fear&Greed +
+  7-day history, retry/backoff each) → **Compute Volatility (`code` node)** → **Risk Strategist**
+  that delegates to 3 `isSubAgent` specialists (Price Agent reconciles the two price feeds, Context
+  Agent reads regime, Red Team argues the contrarian case) → Output. Dynamic per coin; showcases
+  httpRequest + code + responseFormat + multi-sub-agent ReAct in one flow.
 - `examples/superflow-official/` — the 7 official Lyzr SuperFlow examples (Ask the AI, Code Reviewer,
   Web Page Summarizer [httpRequest], Batch Sentiment [code+loop+responseFormat], Smart Email Triage
   [switch], Research Swarm [taskDecomposition], ReAct Agent [orchestrator+sub-agents]) — the

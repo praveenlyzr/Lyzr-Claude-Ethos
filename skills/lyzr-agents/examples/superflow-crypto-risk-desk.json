@@ -11,7 +11,7 @@
             "description": "A coin or question, e.g. 'How risky is Solana right now?'" }
         ]
       },
-      "position": [120, 360]
+      "position": [60, 380]
     },
     {
       "id": "node_extract",
@@ -23,7 +23,7 @@
         "prompt": "={{ $json.chatInput }}",
         "maxTokens": 64,
         "temperature": 0,
-        "systemPrompt": "Identify the PRIMARY crypto coin the user is asking about. Return its CoinGecko id as a lowercase slug in coin_id (e.g. 'bitcoin','ethereum','solana') and its uppercase ticker in symbol (e.g. 'BTC','ETH','SOL'). Default bitcoin / BTC.",
+        "systemPrompt": "Identify the PRIMARY crypto coin the user is asking about. Return its CoinGecko id as a single lowercase slug in coin_id (e.g. 'bitcoin','ethereum','solana') and its uppercase ticker in symbol (e.g. 'BTC','ETH','SOL'). One coin only. Default bitcoin / BTC.",
         "responseFormat": {
           "type": "json_schema",
           "json_schema": {
@@ -41,7 +41,7 @@
           }
         }
       },
-      "position": [360, 360]
+      "position": [300, 380]
     },
     {
       "id": "node_cg",
@@ -53,7 +53,7 @@
         "sendHeaders": false
       },
       "settings": { "retryOnFail": true, "backoff": "exponential" },
-      "position": [600, 120]
+      "position": [540, 120]
     },
     {
       "id": "node_coinbase",
@@ -65,7 +65,7 @@
         "sendHeaders": false
       },
       "settings": { "retryOnFail": true, "backoff": "exponential" },
-      "position": [600, 280]
+      "position": [540, 260]
     },
     {
       "id": "node_global",
@@ -77,7 +77,7 @@
         "sendHeaders": false
       },
       "settings": { "retryOnFail": true, "backoff": "exponential" },
-      "position": [600, 440]
+      "position": [540, 400]
     },
     {
       "id": "node_sentiment",
@@ -89,7 +89,28 @@
         "sendHeaders": false
       },
       "settings": { "retryOnFail": true, "backoff": "exponential" },
-      "position": [600, 600]
+      "position": [540, 540]
+    },
+    {
+      "id": "node_history",
+      "name": "Fetch History",
+      "type": "lyzr-nodes-base.httpRequest",
+      "parameters": {
+        "url": "=https://api.coingecko.com/api/v3/coins/{{ $('Extract Coin').json.output.coin_id }}/market_chart?vs_currency=usd&days=7&interval=daily",
+        "method": "GET",
+        "sendHeaders": false
+      },
+      "settings": { "retryOnFail": true, "backoff": "exponential" },
+      "position": [540, 680]
+    },
+    {
+      "id": "node_vol",
+      "name": "Compute Volatility",
+      "type": "lyzr-nodes-base.code",
+      "parameters": {
+        "jsCode": "const b = typeof $json.body === 'string' ? JSON.parse($json.body) : ($json.body || {});\nconst prices = (b.prices || []).map(p => p[1]).filter(x => typeof x === 'number');\nconst rets = prices.slice(1).map((p, i) => (p - prices[i]) / prices[i]);\nconst mean = rets.length ? rets.reduce((a, b) => a + b, 0) / rets.length : 0;\nconst vol = rets.length ? Math.sqrt(rets.reduce((a, b) => a + (b - mean) ** 2, 0) / rets.length) * 100 : 0;\nconst trend = prices.length > 1 ? (prices[prices.length - 1] - prices[0]) / prices[0] * 100 : 0;\nconst hi = prices.length ? Math.max(...prices) : 0;\nconst lo = prices.length ? Math.min(...prices) : 0;\nconst range = hi ? (hi - lo) / hi * 100 : 0;\n[{ json: { volatility_7d_pct: Math.round(vol * 100) / 100, trend_7d_pct: Math.round(trend * 100) / 100, range_7d_pct: Math.round(range * 100) / 100, points: prices.length } }];"
+      },
+      "position": [780, 680]
     },
     {
       "id": "node_strategist",
@@ -100,10 +121,10 @@
         "provider": "openai",
         "maxTokens": 2560,
         "temperature": 0.4,
-        "prompt": "=User request: {{ $('Trigger').json.chatInput }}\nCoin: {{ $('Extract Coin').json.output.coin_id }} ({{ $('Extract Coin').json.output.symbol }})\n\nPRICE SOURCE A — CoinGecko markets:\n{{ $('Fetch CoinGecko').json.body }}\n\nPRICE SOURCE B — Coinbase spot:\n{{ $('Fetch Coinbase').json.body }}\n\nGlobal market (CoinGecko):\n{{ $('Fetch Global').json.body }}\n\nFear & Greed:\n{{ $('Fetch Sentiment').json.body }}",
-        "systemPrompt": "You are the lead of a crypto risk desk with two specialist sub-agents:\n• Price Agent — reconciles a trustworthy USD price from the two price sources.\n• Context Agent — reads the market regime from global data + Fear & Greed.\n\nThink in steps, don't do their jobs for them:\n1. Hand both price quotes to the Price Agent and get a single trusted price. If it flags a discrepancy or low confidence, PUSH BACK and have it reconsider — debate until you're confident.\n2. Hand the global + sentiment data to the Context Agent and get the regime read.\n3. Write the final desk brief as clean markdown:\n\n# <Coin> Risk Brief\n**Price:** <trusted price> ( <one-line note on cross-source agreement/discrepancy and how you resolved it> )\n**24h:** <change>   **Risk:** <Calm|Elevated|High>\n\n**Market regime:** <Context Agent's read, 1-2 sentences>\n\n**What to watch**\n- <bullet>\n- <bullet>\n\n_Not financial advice - always do your own research._\n\nRisk Level rule: High if |24h| >= 8% or Fear&Greed <=25 or >=80; Elevated if |24h| >= 4% or Fear&Greed <=40 or >=70; else Calm. Name the coin and use real numbers."
+        "prompt": "=User request: {{ $('Trigger').json.chatInput }}\nCoin: {{ $('Extract Coin').json.output.coin_id }} ({{ $('Extract Coin').json.output.symbol }})\n\nPRICE SOURCE A — CoinGecko markets:\n{{ $('Fetch CoinGecko').json.body }}\n\nPRICE SOURCE B — Coinbase spot:\n{{ $('Fetch Coinbase').json.body }}\n\nGlobal market (CoinGecko):\n{{ $('Fetch Global').json.body }}\n\nFear & Greed:\n{{ $('Fetch Sentiment').json.body }}\n\n7-DAY STATS (computed): volatility={{ $('Compute Volatility').json.volatility_7d_pct }}%, trend={{ $('Compute Volatility').json.trend_7d_pct }}%, high-low range={{ $('Compute Volatility').json.range_7d_pct }}%",
+        "systemPrompt": "You are the lead of a crypto risk desk with THREE specialist sub-agents:\n• Price Agent — reconciles a trustworthy USD price from the two price sources.\n• Context Agent — reads the market regime from global data + Fear & Greed.\n• Red Team — argues the contrarian case to stress-test your conclusion.\n\nThink in steps; don't do their jobs for them:\n1. Hand both price quotes to the Price Agent for a single trusted price. If it flags a discrepancy or low confidence, PUSH BACK and debate until you're confident.\n2. Hand the global + sentiment data to the Context Agent for the regime read.\n3. Form a PROVISIONAL risk view from: price, 24h % change, the 7-day volatility/trend/range, regime, and sentiment.\n4. Send your provisional view to the Red Team and seriously weigh its strongest counterpoint — adjust your call or rebut it explicitly.\n5. Write the final desk brief as clean markdown:\n\n# <Coin> Risk Brief\n**Price:** <trusted price> ( <one-line note on cross-source agreement/discrepancy and how you resolved it> )\n**24h:** <change>   **7d vol:** <volatility>%   **Risk:** <Calm|Elevated|High>\n\n**Market regime:** <Context Agent's read, 1-2 sentences>\n\n**Counterpoint:** <Red Team's strongest challenge + your response, 1-2 sentences>\n\n**What to watch**\n- <bullet>\n- <bullet>\n\n_Not financial advice - always do your own research._\n\nRisk Level rule: High if |24h| >= 8%, or 7-day volatility >= 6%, or Fear&Greed <=25 or >=80; Elevated if |24h| >= 4%, or 7-day volatility >= 3%, or Fear&Greed <=40 or >=70; else Calm. Name the coin and use real numbers."
       },
-      "position": [900, 360]
+      "position": [1040, 380]
     },
     {
       "id": "node_price_agent",
@@ -118,7 +139,7 @@
         "description": "Reconcile a coin's USD price across the provided sources. Returns the single best price to trust, a confidence 0-1, and any cross-source discrepancy. Reconsiders honestly if challenged.",
         "systemPrompt": "You are a price-reconciliation specialist. Given USD price quotes from one or more sources (e.g. CoinGecko current_price and Coinbase spot amount), output: (1) the single best USD price to trust, (2) confidence 0.0-1.0, (3) any discrepancy — if sources differ by >0.5%, give both numbers, the % gap, and which you'd trust and why (deeper liquidity / more recent). If you only get one source, say so and lower confidence. Be terse and numeric. If challenged, re-examine honestly instead of just agreeing."
       },
-      "position": [1180, 200]
+      "position": [1320, 140]
     },
     {
       "id": "node_context_agent",
@@ -133,14 +154,29 @@
         "description": "Read the market regime from global crypto data (total market cap, BTC dominance, 24h change) and the Fear & Greed index. Returns a 2-3 sentence regime/positioning read.",
         "systemPrompt": "You are a crypto market strategist. Using total market cap + its 24h change, BTC dominance, and the Fear & Greed value/label, state the regime in 2-3 sentences: risk-on vs risk-off, whether capital is rotating to/from BTC, and flag any contrarian extreme (Fear & Greed <=25 or >=80). Be concise."
       },
-      "position": [1180, 440]
+      "position": [1320, 380]
+    },
+    {
+      "id": "node_redteam",
+      "name": "Red Team",
+      "type": "lyzr-nodes-base.lyzr.llm",
+      "parameters": {
+        "model": "gpt-4o-mini",
+        "provider": "openai",
+        "maxTokens": 512,
+        "temperature": 0.6,
+        "isSubAgent": true,
+        "description": "Stress-test the desk's provisional risk call by arguing the strongest contrarian case against it. Returns the single most credible counterpoint.",
+        "systemPrompt": "You are a sharp devil's-advocate risk analyst. Given the desk's provisional risk view and the supporting data, argue the STRONGEST credible counter-case: what is the desk most likely getting wrong, and what evidence supports the opposite read? Give one tight, specific counterpoint (2-3 sentences) — not a list. Be adversarial but honest; if the call looks solid, say which single factor would most change it."
+      },
+      "position": [1320, 620]
     },
     {
       "id": "node_output",
       "name": "Output",
       "type": "lyzr-nodes-base.noOp",
       "parameters": { "outputField": "output", "outputSourceNode": "Risk Strategist" },
-      "position": [1460, 360]
+      "position": [1600, 380]
     }
   ],
   "connections": {
@@ -149,10 +185,13 @@
     "Fetch CoinGecko": { "main": [[{ "node": "Fetch Coinbase", "type": "main", "index": 0 }]] },
     "Fetch Coinbase": { "main": [[{ "node": "Fetch Global", "type": "main", "index": 0 }]] },
     "Fetch Global": { "main": [[{ "node": "Fetch Sentiment", "type": "main", "index": 0 }]] },
-    "Fetch Sentiment": { "main": [[{ "node": "Risk Strategist", "type": "main", "index": 0 }]] },
+    "Fetch Sentiment": { "main": [[{ "node": "Fetch History", "type": "main", "index": 0 }]] },
+    "Fetch History": { "main": [[{ "node": "Compute Volatility", "type": "main", "index": 0 }]] },
+    "Compute Volatility": { "main": [[{ "node": "Risk Strategist", "type": "main", "index": 0 }]] },
     "Risk Strategist": { "main": [[
       { "node": "Price Agent", "type": "main", "index": 0 },
       { "node": "Context Agent", "type": "main", "index": 0 },
+      { "node": "Red Team", "type": "main", "index": 0 },
       { "node": "Output", "type": "main", "index": 0 }
     ]] }
   }
