@@ -46,6 +46,44 @@ Sub-agent (callable BY the orchestrator — add `isSubAgent: true` + a `descript
   "parameters": { "model": "gpt-4o-mini", "provider": "openai", "maxTokens": 2048, "temperature": 0.2,
                   "isSubAgent": true, "description": "Look up facts; return 2-3 sentences.", "systemPrompt": "..." } }
 ```
+**Structured output** — add `responseFormat` (json_schema) to any `lyzr.llm` node; the parsed result
+is then readable downstream as `={{ $json.output.<field> }}`:
+```json
+"responseFormat": { "type": "json_schema", "json_schema": { "name": "coin", "strict": true,
+  "schema": { "type": "object", "required": ["coin_id"],
+    "properties": { "coin_id": { "type": "string" } }, "additionalProperties": false } } }
+```
+
+### HTTP Request — `lyzr-nodes-base.httpRequest`  ⭐ the right way to call external APIs
+```json
+{ "name": "Fetch Page", "type": "lyzr-nodes-base.httpRequest",
+  "parameters": { "url": "={{ $json.url }}", "method": "GET", "sendHeaders": false } }
+```
+The response lands in **`.body`** — read it downstream with `={{ $json.body }}` or
+`={{ $('Fetch Page').json.body }}`. The `url` can be templated:
+`"url": "=https://api.x.com/q?id={{ $('Extract').json.output.coin_id }}"`. **Prefer this over
+custom OpenAPI `lyzr.tool` nodes for fetching data** — no `provider_uuid`, no tool registration,
+no missing-required-param 4xx, no zero-param 404. (The `lyzr.tool`/`isSubAgent` path is for the
+ReAct "agent decides which tool to call" pattern, not deterministic data fetches.)
+
+### Switch (routing) — `lyzr-nodes-base.switch`
+One output branch per rule; wire each branch in `connections.<Switch>.main[i]`.
+```json
+{ "name": "Route", "type": "lyzr-nodes-base.switch",
+  "parameters": { "rules": { "rules": [
+    { "conditions": { "conditions": [ { "leftType": "string", "leftValue": "={{ $json.output.category }}",
+        "operation": "equals", "rightType": "string", "rightValue": "support" } ] } }
+  ] } } }
+```
+
+### Code — `lyzr-nodes-base.code`
+```json
+{ "name": "Split Lines", "type": "lyzr-nodes-base.code",
+  "parameters": { "jsCode": "$json.texts.split('\\n').filter(Boolean).map(text => ({ json: { text } }));" } }
+```
+
+### Loop — `lyzr-nodes-base.splitInBatches`
+`{ "mode": "each", "batchSize": 1 }`. Two outputs: `main[0]` = loop body, `main[1]` = done.
 
 ### AI Swarm (decompose → solve → aggregate) — `lyzr-nodes-base.lyzr.taskDecomposition`
 ```json
@@ -123,32 +161,25 @@ orchestrator's `connections.main[0]` to every sub-agent, tool, AND the Output:
 ```
 The orchestrator's `systemPrompt` tells it when to call each tool/sub-agent.
 
-## Creating a custom tool from any API → attach in SuperFlow (verified end-to-end)
-1. **Create the OpenAPI tool** (host: agent-prod):
-   ```bash
-   curl -X POST https://agent-prod.studio.lyzr.ai/v3/tools/ -H "x-api-key: $LYZR_API_KEY" -H "Content-Type: application/json" -d '{
-     "tool_set_name":"CoinGeckoMarkets",
-     "openapi_schema":{"openapi":"3.0.0","info":{"title":"CoinGecko","version":"1.0.0"},
-       "servers":[{"url":"https://api.coingecko.com"}],
-       "paths":{"/api/v3/coins/markets":{"get":{"operationId":"getCoinMarkets","summary":"Live market data",
-         "parameters":[{"name":"vs_currency","in":"query","required":true,"schema":{"type":"string"}},
-                       {"name":"ids","in":"query","required":true,"schema":{"type":"string"}}],
-         "responses":{"200":{"description":"ok"}}}}}}}'   # -> {"tool_ids":[{"name":"openapi-CoinGeckoMarkets-getCoinMarkets",...}]}
-   ```
-2. **Get its `provider_uuid`** = the `_id` in `GET /v3/providers/tools/all` for that `provider_id`.
-3. **Add a tool node** with `tool_source: "openapi"`, that `provider_uuid`, and `action_names: ["openapi-...-..."]`.
-   Put any REQUIRED params in `parameters.arguments` (see the gotcha above). See the CoinGecko Markets
-   node in `examples/superflow-crypto-risk-desk.json`.
+## External APIs: use `httpRequest`, not custom `lyzr.tool` (lesson learned the hard way)
+Earlier this skill tried to call CoinGecko via custom OpenAPI `lyzr.tool` nodes. That path is
+fragile in SuperFlow: required params 4xx unless pinned in `arguments`, zero-param tools 404 on
+registration, and the UI can leave `tool_name`/`tool_configs` empty. **The official examples all
+use `httpRequest`** for fetching data — just template the URL and read `.body`. Use `lyzr.tool` only
+for the ACI/Composio catalog (Gmail, Slack, etc.) or the ReAct agent-as-tool pattern.
 
-**Runtime-attach also works on plain agents** (verified): put that same `tool_configs` entry on a
-`/v3/agents` agent + add a `TOOL_CALLING` feature — the agent then calls the API live. (A bare
-`tools: [id]` array does NOT fire — you need `tool_configs`. See [`tools.md`](tools.md).)
+For **plain agents** (not SuperFlow), runtime tool use still needs a `tool_configs` entry +
+`TOOL_CALLING` feature — see [`tools.md`](tools.md).
 
 ## Example in this skill
-- `examples/superflow-crypto-risk-desk.json` — the full, importable demo: a Trigger → Orchestrator
-  LLM that calls **3 live no-auth tools** (CoinGecko Markets, CoinGecko Global, Crypto Fear & Greed)
-  and delegates to **2 sub-agents** (Quant + Narrative), then synthesizes a risk brief. Shows the
-  correct tool-node shape **with `arguments` populated** for the required `vs_currency`.
+- `examples/superflow-crypto-risk-desk.json` — the full, importable demo, **rebuilt on the official
+  `httpRequest` pattern**: Trigger → Extract Coin (`lyzr.llm` with `responseFormat`) → 3 live
+  `httpRequest` fetches (CoinGecko markets + global + alternative.me Fear&Greed, retry/backoff on
+  each) → Risk Analyst → Output. Dynamic: ask about any coin and it extracts the id and fetches it.
+- `examples/superflow-official/` — the 7 official Lyzr SuperFlow examples (Ask the AI, Code Reviewer,
+  Web Page Summarizer [httpRequest], Batch Sentiment [code+loop+responseFormat], Smart Email Triage
+  [switch], Research Swarm [taskDecomposition], ReAct Agent [orchestrator+sub-agents]) — the
+  authoritative schema reference. Start from these when building new flows.
 
 ## Durability story (for the pitch; doc-derived)
 SuperFlow's differentiator is durable, exactly-once execution: steps are journaled, completed steps

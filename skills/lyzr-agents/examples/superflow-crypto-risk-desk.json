@@ -8,134 +8,102 @@
       "parameters": {
         "inputSchema": [
           { "name": "chatInput", "type": "string", "required": true, "multiline": true,
-            "description": "One or more coins (+ optional focus), e.g. 'Bitcoin and Ethereum — how risky right now?'" }
+            "description": "A coin or question, e.g. 'How risky is Solana right now?' or 'Bitcoin and Ethereum'" }
         ]
       },
-      "position": [120, 300]
+      "position": [120, 320]
     },
     {
-      "id": "node_orchestrator",
-      "name": "Orchestrator",
+      "id": "node_extract",
+      "name": "Extract Coin",
       "type": "lyzr-nodes-base.lyzr.llm",
       "parameters": {
         "model": "gpt-4o-mini",
         "provider": "openai",
         "prompt": "={{ $json.chatInput }}",
-        "maxTokens": 3000,
+        "maxTokens": 64,
+        "temperature": 0,
+        "systemPrompt": "Extract the CoinGecko coin id(s) from the user's message as a lowercase comma-separated slug list (e.g. 'bitcoin', 'ethereum', 'bitcoin,solana'). Use canonical CoinGecko ids. If none is mentioned, return 'bitcoin'.",
+        "responseFormat": {
+          "type": "json_schema",
+          "json_schema": {
+            "name": "coin",
+            "strict": true,
+            "schema": {
+              "type": "object",
+              "required": ["coin_id"],
+              "properties": { "coin_id": { "type": "string", "description": "comma-separated CoinGecko ids" } },
+              "additionalProperties": false
+            }
+          }
+        }
+      },
+      "position": [380, 320]
+    },
+    {
+      "id": "node_fetch_price",
+      "name": "Fetch Price",
+      "type": "lyzr-nodes-base.httpRequest",
+      "parameters": {
+        "url": "=https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids={{ $('Extract Coin').json.output.coin_id }}&price_change_percentage=24h",
+        "method": "GET",
+        "sendHeaders": false
+      },
+      "settings": { "retryOnFail": true, "backoff": "exponential" },
+      "position": [640, 160]
+    },
+    {
+      "id": "node_fetch_global",
+      "name": "Fetch Global",
+      "type": "lyzr-nodes-base.httpRequest",
+      "parameters": {
+        "url": "https://api.coingecko.com/api/v3/global",
+        "method": "GET",
+        "sendHeaders": false
+      },
+      "settings": { "retryOnFail": true, "backoff": "exponential" },
+      "position": [640, 320]
+    },
+    {
+      "id": "node_fetch_sentiment",
+      "name": "Fetch Sentiment",
+      "type": "lyzr-nodes-base.httpRequest",
+      "parameters": {
+        "url": "https://api.alternative.me/fng/?limit=1",
+        "method": "GET",
+        "sendHeaders": false
+      },
+      "settings": { "retryOnFail": true, "backoff": "exponential" },
+      "position": [640, 480]
+    },
+    {
+      "id": "node_analyst",
+      "name": "Risk Analyst",
+      "type": "lyzr-nodes-base.lyzr.llm",
+      "parameters": {
+        "model": "gpt-4o-mini",
+        "provider": "openai",
+        "prompt": "=Coin(s): {{ $('Extract Coin').json.output.coin_id }}\n\nPer-coin market data (CoinGecko):\n{{ $('Fetch Price').json.body }}\n\nGlobal market (CoinGecko):\n{{ $('Fetch Global').json.body }}\n\nFear & Greed index:\n{{ $('Fetch Sentiment').json.body }}",
+        "maxTokens": 2048,
         "temperature": 0.3,
-        "systemPrompt": "You run a crypto risk desk. From the user's message, note which coin(s) they care about (default Bitcoin).\n\nThree live tools:\n• CoinGecko Markets — per-coin price, 24h % change, 24h volume, market cap, ATH (returns Bitcoin, Ethereum, Solana).\n• CoinGecko Global — whole-market regime: total market cap, BTC dominance, 24h total-market-cap % change.\n• Crypto Fear & Greed — market sentiment index 0-100 with a label.\n\nTwo specialists:\n• Quant Analyst — turns the per-coin + global numbers into momentum/volatility reads and a 0-100 risk score per coin.\n• Narrative Analyst — turns Fear & Greed + BTC dominance into a market-regime / positioning read (risk-on vs risk-off, contrarian extremes).\n\nProcess: (1) Call all three tools. (2) Pass the per-coin + global numbers to the Quant Analyst, and the sentiment + dominance to the Narrative Analyst. (3) Synthesize their reads YOURSELF into the final brief — do not just relay them. Focus the brief on the coin(s) the user asked about.\n\nOutput ONE desk brief: a one-line headline; Snapshot (per coin: price + 24h %); Market Regime (risk-on/off, from dominance + total-cap trend + Fear & Greed); Risk Level — exactly one of Calm / Elevated / High — with a one-line rationale; What to Watch (2 bullets). End with 'Not financial advice - always do your own research.' Use the real numbers and name each coin."
+        "systemPrompt": "You are a crypto risk desk analyst. You are given live data: per-coin market figures (price, 24h % change, 24h volume, market cap, ATH), the global market (total market cap, BTC dominance, 24h total-cap % change), and the Fear & Greed index (0-100 + label).\n\nWrite ONE concise desk brief with these sections:\n- Headline (one line)\n- Snapshot — per coin: price and 24h %\n- Market Regime — risk-on vs risk-off, from BTC dominance + total-cap trend + Fear & Greed\n- Risk Level — exactly one of Calm / Elevated / High, with a one-line rationale (High if any coin's |24h| >= 8% or Fear&Greed <=25 or >=80; Elevated if |24h| >= 4% or Fear&Greed <=40 or >=70; else Calm)\n- What to Watch — 2 bullets\n\nUse the real numbers, name each coin, and end with 'Not financial advice - always do your own research.'"
       },
-      "position": [480, 300]
-    },
-    {
-      "id": "node_quant",
-      "name": "Quant Analyst",
-      "type": "lyzr-nodes-base.lyzr.llm",
-      "parameters": {
-        "model": "gpt-4o-mini", "provider": "openai", "maxTokens": 1024, "temperature": 0.1,
-        "isSubAgent": true,
-        "description": "Turn per-coin market numbers (price, 24h % change, volume, market cap, ATH distance) plus the global market figures into a momentum/volatility read and a 0-100 risk score per coin.",
-        "systemPrompt": "You are a quantitative crypto analyst. From the provided numbers, for each coin give: a one-line momentum/volatility read citing the actual figures, and a Risk Score 0-100 (higher = riskier) using: large |24h change|, thin volume relative to market cap, and distance below ATH all raise the score. Be terse and numeric."
-      },
-      "position": [860, 140]
-    },
-    {
-      "id": "node_narrative",
-      "name": "Narrative Analyst",
-      "type": "lyzr-nodes-base.lyzr.llm",
-      "parameters": {
-        "model": "gpt-4o-mini", "provider": "openai", "maxTokens": 1024, "temperature": 0.3,
-        "isSubAgent": true,
-        "description": "Turn the Fear & Greed index and BTC dominance / total-market-cap trend into a market-regime and positioning read.",
-        "systemPrompt": "You are a crypto market strategist. Using the Fear & Greed value/label, BTC dominance, and total-market-cap 24h change, state the regime in 2-3 sentences: risk-on vs risk-off, whether capital is rotating to/from BTC, and flag any contrarian extreme (Fear & Greed <=25 or >=80)."
-      },
-      "position": [860, 380]
+      "position": [920, 320]
     },
     {
       "id": "node_output",
       "name": "Output",
       "type": "lyzr-nodes-base.noOp",
-      "parameters": { "outputField": "output", "outputSourceNode": "Orchestrator" },
-      "position": [1240, 300]
-    },
-    {
-      "id": "tool_coingecko",
-      "name": "CoinGecko Markets",
-      "type": "lyzr-nodes-base.lyzr.tool",
-      "parameters": {
-        "arguments": { "vs_currency": "usd", "ids": "bitcoin,ethereum,solana" },
-        "tool_name": "openapi-CoinGeckoMarkets-getCoinMarkets",
-        "_isConnected": false,
-        "tool_configs": [
-          { "tool_name": "openapi-CoinGeckoMarkets-getCoinMarkets", "tool_source": "openapi", "action_names": ["openapi-CoinGeckoMarkets-getCoinMarkets"], "persist_auth": true, "credential_id": "", "provider_uuid": "6a2c802caf58417e5bf632eb" }
-        ],
-        "_selectedTool": "6a2c802caf58417e5bf632eb",
-        "action_schema": {
-          "type": "object",
-          "visible": ["vs_currency", "ids", "price_change_percentage"],
-          "required": ["vs_currency", "ids"],
-          "properties": {
-            "vs_currency": { "type": "string", "description": "Fiat currency, e.g. usd" },
-            "ids": { "type": "string", "description": "Comma-separated coin ids, e.g. bitcoin,ethereum" },
-            "price_change_percentage": { "type": "string", "description": "e.g. 1h,24h,7d" }
-          },
-          "additionalProperties": false
-        },
-        "_noAuthRequired": true
-      },
-      "settings": { "retryOnFail": true, "backoff": "exponential" },
-      "position": [217.74, 487.34]
-    },
-    {
-      "id": "tool_global",
-      "name": "CoinGecko Global",
-      "type": "lyzr-nodes-base.lyzr.tool",
-      "parameters": {
-        "arguments": {},
-        "tool_name": "openapi-CoinGeckoGlobal2-getGlobal",
-        "_isConnected": false,
-        "tool_configs": [
-          { "tool_name": "openapi-CoinGeckoGlobal2-getGlobal", "tool_source": "openapi", "action_names": ["openapi-CoinGeckoGlobal2-getGlobal"], "persist_auth": true, "credential_id": "", "provider_uuid": "6a2c8a259a13489a04db7158" }
-        ],
-        "_selectedTool": "6a2c8a259a13489a04db7158",
-        "action_schema": { "type": "object", "visible": [], "required": [], "properties": { "_": { "type": "string", "description": "unused (CoinGecko /global takes no params; this keeps the schema non-empty so SuperFlow registers the tool)" } }, "additionalProperties": false },
-        "_noAuthRequired": true
-      },
-      "settings": { "retryOnFail": true, "backoff": "exponential" },
-      "position": [497.18, 581.36]
-    },
-    {
-      "id": "tool_feargreed",
-      "name": "Crypto Fear & Greed",
-      "type": "lyzr-nodes-base.lyzr.tool",
-      "parameters": {
-        "arguments": { "limit": 1 },
-        "tool_name": "openapi-CryptoFearGreed-getFearGreed",
-        "_isConnected": false,
-        "tool_configs": [
-          { "tool_name": "openapi-CryptoFearGreed-getFearGreed", "tool_source": "openapi", "action_names": ["openapi-CryptoFearGreed-getFearGreed"], "persist_auth": true, "credential_id": "", "provider_uuid": "6a2c830f46c2897653b3bf8d" }
-        ],
-        "_selectedTool": "6a2c830f46c2897653b3bf8d",
-        "action_schema": {
-          "type": "object", "visible": ["limit"], "required": [],
-          "properties": { "limit": { "type": "integer", "description": "Recent readings (default 1)" } },
-          "additionalProperties": false
-        },
-        "_noAuthRequired": true
-      },
-      "settings": { "retryOnFail": true, "backoff": "exponential" },
-      "position": [772.09, 532.54]
+      "parameters": { "outputField": "output", "outputSourceNode": "Risk Analyst" },
+      "position": [1200, 320]
     }
   ],
   "connections": {
-    "Trigger": { "main": [[{ "node": "Orchestrator", "type": "main", "index": 0 }]] },
-    "Orchestrator": { "main": [[
-      { "node": "CoinGecko Markets", "type": "main", "index": 0 },
-      { "node": "CoinGecko Global", "type": "main", "index": 0 },
-      { "node": "Crypto Fear & Greed", "type": "main", "index": 0 },
-      { "node": "Quant Analyst", "type": "main", "index": 0 },
-      { "node": "Narrative Analyst", "type": "main", "index": 0 },
-      { "node": "Output", "type": "main", "index": 0 }
-    ]] }
+    "Trigger": { "main": [[{ "node": "Extract Coin", "type": "main", "index": 0 }]] },
+    "Extract Coin": { "main": [[{ "node": "Fetch Price", "type": "main", "index": 0 }]] },
+    "Fetch Price": { "main": [[{ "node": "Fetch Global", "type": "main", "index": 0 }]] },
+    "Fetch Global": { "main": [[{ "node": "Fetch Sentiment", "type": "main", "index": 0 }]] },
+    "Fetch Sentiment": { "main": [[{ "node": "Risk Analyst", "type": "main", "index": 0 }]] },
+    "Risk Analyst": { "main": [[{ "node": "Output", "type": "main", "index": 0 }]] }
   }
 }
