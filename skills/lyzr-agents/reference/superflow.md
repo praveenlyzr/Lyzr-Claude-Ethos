@@ -168,6 +168,17 @@ registration, and the UI can leave `tool_name`/`tool_configs` empty. **The offic
 use `httpRequest`** for fetching data — just template the URL and read `.body`. Use `lyzr.tool` only
 for the ACI/Composio catalog (Gmail, Slack, etc.) or the ReAct agent-as-tool pattern.
 
+⚠️ **A sub-agent cannot own/call a custom tool or API in SuperFlow (user-confirmed).** Wiring a
+`lyzr.tool` (e.g. custom CoinGecko OpenAPI) to an `isSubAgent` LLM and expecting the sub-agent to
+fetch on demand does **not** work. And `httpRequest` is a *pipeline* node — an agent can't invoke it
+mid-reasoning. So the "main agent delegates to a specialist that goes and fetches" pattern isn't
+achievable; instead use the **3-layer design**: (1) a **data layer** of `httpRequest` nodes fetches
+everything up front, (2) a **reasoning layer** — a ReAct orchestrator that delegates to `isSubAgent`
+specialists which *reason over* the fetched data (and debate, multi-step), (3) a **presentation
+layer** — a plain `lyzr.llm` Visualizer that reformats the orchestrator's output → Output. See
+`examples/superflow-crypto-risk-desk.json` (Extract → 4 httpRequest → Strategist ⇄ Price/Context
+agents → Visualizer → Output).
+
 For **plain agents** (not SuperFlow), runtime tool use still needs a `tool_configs` entry +
 `TOOL_CALLING` feature — see [`tools.md`](tools.md).
 

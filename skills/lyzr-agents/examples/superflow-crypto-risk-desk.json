@@ -23,7 +23,7 @@
         "prompt": "={{ $json.chatInput }}",
         "maxTokens": 64,
         "temperature": 0,
-        "systemPrompt": "Identify the PRIMARY crypto coin the user is asking about. Return its CoinGecko id as a lowercase slug in coin_id (e.g. 'bitcoin', 'ethereum', 'solana') and its uppercase ticker symbol in symbol (e.g. 'BTC', 'ETH', 'SOL'). If none is mentioned, default to bitcoin / BTC.",
+        "systemPrompt": "Identify the PRIMARY crypto coin the user is asking about. Return its CoinGecko id as a lowercase slug in coin_id (e.g. 'bitcoin','ethereum','solana') and its uppercase ticker in symbol (e.g. 'BTC','ETH','SOL'). Default bitcoin / BTC.",
         "responseFormat": {
           "type": "json_schema",
           "json_schema": {
@@ -33,7 +33,7 @@
               "type": "object",
               "required": ["coin_id", "symbol"],
               "properties": {
-                "coin_id": { "type": "string", "description": "CoinGecko id slug, e.g. bitcoin" },
+                "coin_id": { "type": "string", "description": "CoinGecko id slug" },
                 "symbol": { "type": "string", "description": "Ticker, e.g. BTC" }
               },
               "additionalProperties": false
@@ -53,7 +53,7 @@
         "sendHeaders": false
       },
       "settings": { "retryOnFail": true, "backoff": "exponential" },
-      "position": [620, 140]
+      "position": [600, 120]
     },
     {
       "id": "node_coinbase",
@@ -65,7 +65,7 @@
         "sendHeaders": false
       },
       "settings": { "retryOnFail": true, "backoff": "exponential" },
-      "position": [620, 300]
+      "position": [600, 280]
     },
     {
       "id": "node_global",
@@ -77,7 +77,7 @@
         "sendHeaders": false
       },
       "settings": { "retryOnFail": true, "backoff": "exponential" },
-      "position": [620, 460]
+      "position": [600, 440]
     },
     {
       "id": "node_sentiment",
@@ -89,7 +89,7 @@
         "sendHeaders": false
       },
       "settings": { "retryOnFail": true, "backoff": "exponential" },
-      "position": [620, 620]
+      "position": [600, 600]
     },
     {
       "id": "node_strategist",
@@ -98,10 +98,10 @@
       "parameters": {
         "model": "gpt-4o-mini",
         "provider": "openai",
-        "prompt": "=User request: {{ $('Trigger').json.chatInput }}\nCoin: {{ $('Extract Coin').json.output.coin_id }} ({{ $('Extract Coin').json.output.symbol }})\n\nPRICE SOURCE A — CoinGecko markets:\n{{ $('Fetch CoinGecko').json.body }}\n\nPRICE SOURCE B — Coinbase spot:\n{{ $('Fetch Coinbase').json.body }}\n\nGlobal market (CoinGecko):\n{{ $('Fetch Global').json.body }}\n\nFear & Greed:\n{{ $('Fetch Sentiment').json.body }}",
         "maxTokens": 2560,
         "temperature": 0.4,
-        "systemPrompt": "You are a deliberate crypto risk strategist. You have ONE sub-agent: the Price Agent, whose job is to determine a trustworthy USD price.\n\nDo NOT decide the price yourself. Process:\n1. You are given price data from TWO independent sources (CoinGecko and Coinbase). Hand BOTH quotes to the Price Agent and ask it for a single trusted price.\n2. Read the Price Agent's verdict critically. If it reports a discrepancy, low confidence, or only one usable source, PUSH BACK: ask it to reconsider, explain which source is more reliable, or whether the price should be treated as uncertain. Go back and forth until you are genuinely confident — this is a debate, not a single question.\n3. Only after you trust a price do you write the brief.\n\nFinal output:\n- Headline (one line)\n- Price — the trusted figure, plus a one-line note on cross-source agreement/discrepancy and how you resolved it\n- Snapshot — 24h % change\n- Market Regime — risk-on/off from BTC dominance + total-cap trend + Fear & Greed\n- Risk Level — exactly one of Calm / Elevated / High, with a one-line rationale\n- What to Watch — 2 bullets\nEnd with 'Not financial advice - always do your own research.'"
+        "prompt": "=User request: {{ $('Trigger').json.chatInput }}\nCoin: {{ $('Extract Coin').json.output.coin_id }} ({{ $('Extract Coin').json.output.symbol }})\n\nPRICE SOURCE A — CoinGecko markets:\n{{ $('Fetch CoinGecko').json.body }}\n\nPRICE SOURCE B — Coinbase spot:\n{{ $('Fetch Coinbase').json.body }}\n\nGlobal market (CoinGecko):\n{{ $('Fetch Global').json.body }}\n\nFear & Greed:\n{{ $('Fetch Sentiment').json.body }}",
+        "systemPrompt": "You are the lead of a crypto risk desk with two specialist sub-agents:\n• Price Agent — reconciles a trustworthy USD price from the two price sources.\n• Context Agent — reads the market regime from global data + Fear & Greed.\n\nThink in steps, don't do their jobs for them:\n1. Hand both price quotes to the Price Agent and get a single trusted price. If it flags a discrepancy or low confidence, PUSH BACK and have it reconsider — debate until you're confident.\n2. Hand the global + sentiment data to the Context Agent and get the regime read.\n3. Combine their findings into a structured risk assessment (do NOT format it prettily — that's the Visualizer's job). Include: trusted price + how the cross-source gap was resolved; 24h % change; market regime; a Risk Level of exactly Calm / Elevated / High with a one-line rationale (High if |24h| >= 8% or Fear&Greed <=25 or >=80; Elevated if |24h| >= 4% or Fear&Greed <=40 or >=70; else Calm); and 2 'what to watch' items. Name the coin and use real numbers."
       },
       "position": [900, 360]
     },
@@ -113,19 +113,48 @@
         "model": "gpt-4o-mini",
         "provider": "openai",
         "maxTokens": 512,
-        "isSubAgent": true,
-        "description": "Reconcile a coin's USD price across one or more sources. Returns the single best price to trust, a confidence 0-1, and any cross-source discrepancy. Will reconsider honestly if challenged.",
         "temperature": 0.1,
-        "systemPrompt": "You are a price-reconciliation specialist. Given USD price quotes for a coin from one or more sources (e.g. CoinGecko current_price and Coinbase spot amount), output: (1) the single best USD price to trust, (2) a confidence from 0.0 to 1.0, and (3) any discrepancy — if the sources differ by more than 0.5%, state both numbers, the % gap, and which you'd trust and why (e.g. deeper-liquidity or more-recent venue). If you only get one source, say so and lower confidence for the lack of a cross-check. Be terse and numeric. If the strategist challenges you, re-examine honestly rather than just agreeing."
+        "isSubAgent": true,
+        "description": "Reconcile a coin's USD price across the provided sources. Returns the single best price to trust, a confidence 0-1, and any cross-source discrepancy. Reconsiders honestly if challenged.",
+        "systemPrompt": "You are a price-reconciliation specialist. Given USD price quotes from one or more sources (e.g. CoinGecko current_price and Coinbase spot amount), output: (1) the single best USD price to trust, (2) confidence 0.0-1.0, (3) any discrepancy — if sources differ by >0.5%, give both numbers, the % gap, and which you'd trust and why (deeper liquidity / more recent). If you only get one source, say so and lower confidence. Be terse and numeric. If challenged, re-examine honestly instead of just agreeing."
       },
-      "position": [1180, 180]
+      "position": [1180, 160]
+    },
+    {
+      "id": "node_context_agent",
+      "name": "Context Agent",
+      "type": "lyzr-nodes-base.lyzr.llm",
+      "parameters": {
+        "model": "gpt-4o-mini",
+        "provider": "openai",
+        "maxTokens": 512,
+        "temperature": 0.3,
+        "isSubAgent": true,
+        "description": "Read the market regime from global crypto data (total market cap, BTC dominance, 24h change) and the Fear & Greed index. Returns a 2-3 sentence regime/positioning read.",
+        "systemPrompt": "You are a crypto market strategist. Using total market cap + its 24h change, BTC dominance, and the Fear & Greed value/label, state the regime in 2-3 sentences: risk-on vs risk-off, whether capital is rotating to/from BTC, and flag any contrarian extreme (Fear & Greed <=25 or >=80). Be concise."
+      },
+      "position": [1180, 360]
+    },
+    {
+      "id": "node_visualizer",
+      "name": "Visualizer",
+      "type": "lyzr-nodes-base.lyzr.llm",
+      "parameters": {
+        "model": "gpt-4o-mini",
+        "provider": "openai",
+        "maxTokens": 1280,
+        "temperature": 0.3,
+        "prompt": "={{ $('Risk Strategist').json.output }}",
+        "systemPrompt": "You are a desk editor. Reformat the analyst's risk assessment into a clean, scannable markdown brief with this exact shape:\n\n# <Coin> Risk Brief\n**Price:** <trusted price> ( <one-line note on cross-source agreement/discrepancy> )\n**24h:** <change>   **Risk:** <Calm|Elevated|High>\n\n**Market regime:** <one or two sentences>\n\n**What to watch**\n- <bullet>\n- <bullet>\n\n_Not financial advice - always do your own research._\n\nDo not add information that isn't in the assessment; only reformat."
+      },
+      "position": [1180, 560]
     },
     {
       "id": "node_output",
       "name": "Output",
       "type": "lyzr-nodes-base.noOp",
-      "parameters": { "outputField": "output", "outputSourceNode": "Risk Strategist" },
-      "position": [1180, 460]
+      "parameters": { "outputField": "output", "outputSourceNode": "Visualizer" },
+      "position": [1460, 360]
     }
   ],
   "connections": {
@@ -137,7 +166,9 @@
     "Fetch Sentiment": { "main": [[{ "node": "Risk Strategist", "type": "main", "index": 0 }]] },
     "Risk Strategist": { "main": [[
       { "node": "Price Agent", "type": "main", "index": 0 },
-      { "node": "Output", "type": "main", "index": 0 }
-    ]] }
+      { "node": "Context Agent", "type": "main", "index": 0 },
+      { "node": "Visualizer", "type": "main", "index": 0 }
+    ]] },
+    "Visualizer": { "main": [[{ "node": "Output", "type": "main", "index": 0 }]] }
   }
 }
