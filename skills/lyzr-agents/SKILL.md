@@ -45,7 +45,7 @@ Recipes & SDK / platform / context:
 - [`reference/recipes.md`](reference/recipes.md) — **task-oriented playbooks** (support bot, manager, extractor, file-gen, guardrails, scheduler, Cognis, regression check)
 - [`reference/lyzr-adk.md`](reference/lyzr-adk.md) — `lyzr-adk` Python SDK (code-first; KB/streaming/Cognis/scheduler verified)
 - [`reference/cognis.md`](reference/cognis.md) — Cognis persistent memory layer + Claude-Cognis
-- [`reference/superflow.md`](reference/superflow.md) — durable visual workflow engine
+- [`reference/superflow.md`](reference/superflow.md) — **SuperFlow visual builder** (real n8n-style `nodes`/`connections` schema, LLM orchestrator + sub-agents, ACI/OpenAPI tool nodes, importable examples) — distinct from the `/v3/workflows` engine
 - [`reference/platform.md`](reference/platform.md) — build paths, connectors, eval, plans, accounts, MCP server
 - [`reference/channels-and-cookbooks.md`](reference/channels-and-cookbooks.md) — Slack/Teams/Telegram + end-to-end recipes
 - [`reference/overview-and-glossary.md`](reference/overview-and-glossary.md) — what Lyzr is, concepts, glossary, credits
@@ -114,6 +114,8 @@ python3 ${CLAUDE_PLUGIN_ROOT}/skills/lyzr-agents/scripts/lyzr.py docs "<path|url
 The script targets the right host automatically (agent-prod / rag-prod / rai-prod / voice).
 
 Other scripts:
+- `scripts/run_workflow.py <flow.json> [--inputs '{...}']` — execute a workflow via the real
+  `run-dag` engine and poll for results (the `/v3/workflows/{id}/execute` endpoint is a stub — see reference/workflows.md)
 - `scripts/recipe_support_bot.sh <kb_name> <doc> [agent_name]` — one-command KB+memory support bot (verified)
 - `scripts/rag_smoke_test.sh` — 17-check end-to-end RAG test (self-cleaning)
 - `scripts/surface_check.sh` — full-surface drift detector: re-verifies every endpoint across all hosts (run after Lyzr API updates)

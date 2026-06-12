@@ -1,0 +1,35 @@
+{
+  "_comment": "A SuperFlow Tool node for the custom CoinGecko OpenAPI tool (verified working at runtime). Add this node to a flow and wire the Orchestrator's connections.main[0] to include it. provider_uuid is this account's tool id from GET /v3/providers/tools/all — recreate the tool (see reference/superflow.md) to get your own uuid.",
+  "id": "tool_cg_markets",
+  "name": "CoinGecko Markets",
+  "type": "lyzr-nodes-base.lyzr.tool",
+  "parameters": {
+    "tool_name": "openapi-CoinGeckoMarkets-getCoinMarkets",
+    "tool_configs": [
+      {
+        "tool_name": "openapi-CoinGeckoMarkets-getCoinMarkets",
+        "tool_source": "openapi",
+        "credential_id": "",
+        "provider_uuid": "6a2c802caf58417e5bf632eb",
+        "action_names": ["openapi-CoinGeckoMarkets-getCoinMarkets"],
+        "persist_auth": true
+      }
+    ],
+    "arguments": {},
+    "_selectedTool": "6a2c802caf58417e5bf632eb",
+    "_isConnected": false,
+    "_noAuthRequired": true,
+    "action_schema": {
+      "type": "object",
+      "visible": ["vs_currency", "ids", "price_change_percentage"],
+      "required": ["vs_currency", "ids"],
+      "properties": {
+        "vs_currency": { "type": "string", "description": "Fiat currency, e.g. usd" },
+        "ids": { "type": "string", "description": "Comma-separated CoinGecko coin ids, e.g. bitcoin,ethereum" },
+        "price_change_percentage": { "type": "string", "description": "Comma-separated windows, e.g. 1h,24h,7d" }
+      },
+      "additionalProperties": false
+    }
+  },
+  "position": [470, 600]
+}

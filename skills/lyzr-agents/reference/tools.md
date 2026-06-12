@@ -7,11 +7,24 @@ documented **execute** (`/v3/tools/openapi/{id}/execute`) and **toggle** (`PATCH
 both return **405** in practice (documented but not functional with this key). And `GET /v3/tools/`
 returns `{}` even when a custom tool exists — list it isn't reliable; `GET /v3/tools/{id}` works.
 
-⚠️ **Runtime attachment caveat (verified):** putting a tool id in the agent's `tools[]` array
-is **not enough** — even with a `TOOL_CALLING` feature added, the agent reported the tool as
-unavailable at chat time (it only saw built-in artifact tools). Custom OpenAPI tools need the
-Studio-generated `tool_configs` entry to actually fire. The reliable runtime tools are the
-**ready/`aci` tools** whose `tool_configs` shape is confirmed below.
+## Runtime attachment — `tool_configs` is the key (now fully verified ✅)
+
+A bare `tools: [id]` array does **not** fire at runtime (even with `TOOL_CALLING`). What works,
+**verified live for a custom OpenAPI tool** (an agent called CoinGecko and returned live BTC data):
+add a `tool_configs` entry **plus** a `TOOL_CALLING` feature. Confirmed shapes:
+```jsonc
+// custom OpenAPI tool (tool_source: "openapi")
+"tool_configs": [ { "tool_name": "openapi-CoinGeckoMarkets-getCoinMarkets", "tool_source": "openapi",
+  "credential_id": "", "provider_uuid": "<_id from /v3/providers/tools/all>",
+  "action_names": ["openapi-CoinGeckoMarkets-getCoinMarkets"], "persist_auth": true } ]
+// ready/Composio tool (tool_source: "aci")
+"tool_configs": [ { "tool_name": "HACKERNEWS", "tool_source": "aci", "credential_id": "",
+  "provider_uuid": "6980d823e1440adfe52faf9f", "action_names": ["HACKERNEWS__TOP_STORIES_GET"], "persist_auth": true } ]
+```
+…plus on the agent: `"features": [ { "type": "TOOL_CALLING", "config": { "max_tries": 3 }, "priority": 0 } ]`.
+`provider_uuid` comes from the catalog (`GET /v3/providers/tools/all`); no-auth tools use
+`credential_id: ""`. The **same `tool_configs` entry** is what a SuperFlow tool node uses — see
+[`superflow.md`](superflow.md).
 
 ## How an agent references tools
 
