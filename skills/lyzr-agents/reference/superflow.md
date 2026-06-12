@@ -112,16 +112,18 @@ The orchestrator's `systemPrompt` tells it when to call each tool/sub-agent.
    ```
 2. **Get its `provider_uuid`** = the `_id` in `GET /v3/providers/tools/all` for that `provider_id`.
 3. **Add a tool node** with `tool_source: "openapi"`, that `provider_uuid`, and `action_names: ["openapi-...-..."]`.
-   See `examples/superflow-tool-node-coingecko.json`.
+   Put any REQUIRED params in `parameters.arguments` (see the gotcha above). See the CoinGecko Markets
+   node in `examples/superflow-crypto-risk-desk.json`.
 
 **Runtime-attach also works on plain agents** (verified): put that same `tool_configs` entry on a
 `/v3/agents` agent + add a `TOOL_CALLING` feature — the agent then calls the API live. (A bare
 `tools: [id]` array does NOT fire — you need `tool_configs`. See [`tools.md`](tools.md).)
 
-## Examples in this skill
-- `examples/superflow-tech-pulse-hn.json` — orchestrator + 3 sub-agents + live HACKERNEWS ACI tool (importable).
-- `examples/superflow-crypto-risk-swarm.json` — AI Swarm decompose→synthesize risk brief (importable).
-- `examples/superflow-tool-node-coingecko.json` — a custom-OpenAPI-tool node to drop into any flow.
+## Example in this skill
+- `examples/superflow-crypto-risk-desk.json` — the full, importable demo: a Trigger → Orchestrator
+  LLM that calls **3 live no-auth tools** (CoinGecko Markets, CoinGecko Global, Crypto Fear & Greed)
+  and delegates to **2 sub-agents** (Quant + Narrative), then synthesizes a risk brief. Shows the
+  correct tool-node shape **with `arguments` populated** for the required `vs_currency`.
 
 ## Durability story (for the pitch; doc-derived)
 SuperFlow's differentiator is durable, exactly-once execution: steps are journaled, completed steps

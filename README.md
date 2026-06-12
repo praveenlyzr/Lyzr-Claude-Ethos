@@ -32,9 +32,7 @@ skills/lyzr-agents/
 │   ├── structured-output-agent.json  # Agent with strict JSON response_format
 │   ├── knowledge-base-agent.json     # Agent wired to a RAG knowledge base
 │   ├── manager-agent.json            # Manager that delegates to sub-agents
-│   ├── superflow-tech-pulse-hn.json  # SuperFlow: orchestrator + sub-agents + live HN tool (importable)
-│   ├── superflow-crypto-risk-swarm.json  # SuperFlow: AI Swarm decompose→synthesize (importable)
-│   └── superflow-tool-node-coingecko.json # SuperFlow tool node for a custom CoinGecko OpenAPI tool
+│   └── superflow-crypto-risk-desk.json  # SuperFlow: orchestrator + 3 live tools + 2 sub-agents (importable)
 └── reference/                        # Per-domain API references (verified vs doc-derived)
     ├── agent-extras.md               # versions, chat options, multimodal, WebSocket events
     ├── agent-features.md             # enabling features + top-level agent fields
