@@ -8,3 +8,6 @@ __pycache__/
 
 # OS
 .DS_Store
+
+# Claude Code local harness config (auto-push hook, local settings)
+.claude/
