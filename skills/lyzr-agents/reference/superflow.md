@@ -79,6 +79,15 @@ Fix: populate them, e.g. `"arguments": { "vs_currency": "usd", "ids": "bitcoin,e
 Prefer tools whose required inputs you can pin here; keep dynamic-but-optional inputs out of `required`.
 (Also: never set `isSubAgent`/`description` on a tool node — those belong on `lyzr.llm` sub-agents.)
 
+⚠️ **A tool whose action schema has ZERO parameters fails to register in SuperFlow** —
+runtime error `platform returned status 404: Tool '...' not found in any provider`, even though
+the tool exists in `GET /v3/providers/tools/all` and works fine when attached to a plain agent.
+(Observed: a no-param CoinGecko `/global` OpenAPI tool 404'd in SuperFlow; the parameterized
+Markets tool resolved.) Fix: give every OpenAPI tool **at least one parameter** in its schema —
+even a single optional, unused one (`"properties": { "_": { "type": "string" } }`) is enough,
+since CoinGecko-style APIs ignore unknown query params. Recreate the tool (new `provider_uuid`)
+with a non-empty schema and point the node at it.
+
 ### Output — `lyzr-nodes-base.noOp`
 ```json
 { "name": "Output", "type": "lyzr-nodes-base.noOp", "parameters": { "outputField": "output", "outputSourceNode": "Orchestrator" } }

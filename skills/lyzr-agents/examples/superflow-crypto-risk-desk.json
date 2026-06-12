@@ -91,13 +91,13 @@
       "type": "lyzr-nodes-base.lyzr.tool",
       "parameters": {
         "arguments": {},
-        "tool_name": "openapi-CoinGeckoGlobal-getGlobal",
+        "tool_name": "openapi-CoinGeckoGlobal2-getGlobal",
         "_isConnected": false,
         "tool_configs": [
-          { "tool_name": "openapi-CoinGeckoGlobal-getGlobal", "tool_source": "openapi", "action_names": ["openapi-CoinGeckoGlobal-getGlobal"], "persist_auth": true, "credential_id": "", "provider_uuid": "6a2c8419165e7578cd088f8c" }
+          { "tool_name": "openapi-CoinGeckoGlobal2-getGlobal", "tool_source": "openapi", "action_names": ["openapi-CoinGeckoGlobal2-getGlobal"], "persist_auth": true, "credential_id": "", "provider_uuid": "6a2c8a259a13489a04db7158" }
         ],
-        "_selectedTool": "6a2c8419165e7578cd088f8c",
-        "action_schema": { "type": "object", "visible": [], "required": [], "properties": {}, "additionalProperties": false },
+        "_selectedTool": "6a2c8a259a13489a04db7158",
+        "action_schema": { "type": "object", "visible": [], "required": [], "properties": { "_": { "type": "string", "description": "unused (CoinGecko /global takes no params; this keeps the schema non-empty so SuperFlow registers the tool)" } }, "additionalProperties": false },
         "_noAuthRequired": true
       },
       "position": [497.18, 581.36]
