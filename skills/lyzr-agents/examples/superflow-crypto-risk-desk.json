@@ -101,7 +101,7 @@
         "maxTokens": 2560,
         "temperature": 0.4,
         "prompt": "=User request: {{ $('Trigger').json.chatInput }}\nCoin: {{ $('Extract Coin').json.output.coin_id }} ({{ $('Extract Coin').json.output.symbol }})\n\nPRICE SOURCE A — CoinGecko markets:\n{{ $('Fetch CoinGecko').json.body }}\n\nPRICE SOURCE B — Coinbase spot:\n{{ $('Fetch Coinbase').json.body }}\n\nGlobal market (CoinGecko):\n{{ $('Fetch Global').json.body }}\n\nFear & Greed:\n{{ $('Fetch Sentiment').json.body }}",
-        "systemPrompt": "You are the lead of a crypto risk desk with two specialist sub-agents:\n• Price Agent — reconciles a trustworthy USD price from the two price sources.\n• Context Agent — reads the market regime from global data + Fear & Greed.\n\nThink in steps, don't do their jobs for them:\n1. Hand both price quotes to the Price Agent and get a single trusted price. If it flags a discrepancy or low confidence, PUSH BACK and have it reconsider — debate until you're confident.\n2. Hand the global + sentiment data to the Context Agent and get the regime read.\n3. Combine their findings into a structured risk assessment (do NOT format it prettily — that's the Visualizer's job). Include: trusted price + how the cross-source gap was resolved; 24h % change; market regime; a Risk Level of exactly Calm / Elevated / High with a one-line rationale (High if |24h| >= 8% or Fear&Greed <=25 or >=80; Elevated if |24h| >= 4% or Fear&Greed <=40 or >=70; else Calm); and 2 'what to watch' items. Name the coin and use real numbers."
+        "systemPrompt": "You are the lead of a crypto risk desk with two specialist sub-agents:\n• Price Agent — reconciles a trustworthy USD price from the two price sources.\n• Context Agent — reads the market regime from global data + Fear & Greed.\n\nThink in steps, don't do their jobs for them:\n1. Hand both price quotes to the Price Agent and get a single trusted price. If it flags a discrepancy or low confidence, PUSH BACK and have it reconsider — debate until you're confident.\n2. Hand the global + sentiment data to the Context Agent and get the regime read.\n3. Write the final desk brief as clean markdown:\n\n# <Coin> Risk Brief\n**Price:** <trusted price> ( <one-line note on cross-source agreement/discrepancy and how you resolved it> )\n**24h:** <change>   **Risk:** <Calm|Elevated|High>\n\n**Market regime:** <Context Agent's read, 1-2 sentences>\n\n**What to watch**\n- <bullet>\n- <bullet>\n\n_Not financial advice - always do your own research._\n\nRisk Level rule: High if |24h| >= 8% or Fear&Greed <=25 or >=80; Elevated if |24h| >= 4% or Fear&Greed <=40 or >=70; else Calm. Name the coin and use real numbers."
       },
       "position": [900, 360]
     },
@@ -118,7 +118,7 @@
         "description": "Reconcile a coin's USD price across the provided sources. Returns the single best price to trust, a confidence 0-1, and any cross-source discrepancy. Reconsiders honestly if challenged.",
         "systemPrompt": "You are a price-reconciliation specialist. Given USD price quotes from one or more sources (e.g. CoinGecko current_price and Coinbase spot amount), output: (1) the single best USD price to trust, (2) confidence 0.0-1.0, (3) any discrepancy — if sources differ by >0.5%, give both numbers, the % gap, and which you'd trust and why (deeper liquidity / more recent). If you only get one source, say so and lower confidence. Be terse and numeric. If challenged, re-examine honestly instead of just agreeing."
       },
-      "position": [1180, 160]
+      "position": [1180, 200]
     },
     {
       "id": "node_context_agent",
@@ -133,27 +133,13 @@
         "description": "Read the market regime from global crypto data (total market cap, BTC dominance, 24h change) and the Fear & Greed index. Returns a 2-3 sentence regime/positioning read.",
         "systemPrompt": "You are a crypto market strategist. Using total market cap + its 24h change, BTC dominance, and the Fear & Greed value/label, state the regime in 2-3 sentences: risk-on vs risk-off, whether capital is rotating to/from BTC, and flag any contrarian extreme (Fear & Greed <=25 or >=80). Be concise."
       },
-      "position": [1180, 360]
-    },
-    {
-      "id": "node_visualizer",
-      "name": "Visualizer",
-      "type": "lyzr-nodes-base.lyzr.llm",
-      "parameters": {
-        "model": "gpt-4o-mini",
-        "provider": "openai",
-        "maxTokens": 1280,
-        "temperature": 0.3,
-        "prompt": "={{ $('Risk Strategist').json.output }}",
-        "systemPrompt": "You are a desk editor. Reformat the analyst's risk assessment into a clean, scannable markdown brief with this exact shape:\n\n# <Coin> Risk Brief\n**Price:** <trusted price> ( <one-line note on cross-source agreement/discrepancy> )\n**24h:** <change>   **Risk:** <Calm|Elevated|High>\n\n**Market regime:** <one or two sentences>\n\n**What to watch**\n- <bullet>\n- <bullet>\n\n_Not financial advice - always do your own research._\n\nDo not add information that isn't in the assessment; only reformat."
-      },
-      "position": [1180, 560]
+      "position": [1180, 440]
     },
     {
       "id": "node_output",
       "name": "Output",
       "type": "lyzr-nodes-base.noOp",
-      "parameters": { "outputField": "output", "outputSourceNode": "Visualizer" },
+      "parameters": { "outputField": "output", "outputSourceNode": "Risk Strategist" },
       "position": [1460, 360]
     }
   ],
@@ -167,8 +153,7 @@
     "Risk Strategist": { "main": [[
       { "node": "Price Agent", "type": "main", "index": 0 },
       { "node": "Context Agent", "type": "main", "index": 0 },
-      { "node": "Visualizer", "type": "main", "index": 0 }
-    ]] },
-    "Visualizer": { "main": [[{ "node": "Output", "type": "main", "index": 0 }]] }
+      { "node": "Output", "type": "main", "index": 0 }
+    ]] }
   }
 }
