@@ -31,7 +31,7 @@
         "prompt": "={{ $json.chatInput }}",
         "maxTokens": 128,
         "temperature": 0,
-        "systemPrompt": "Classify the user's crypto request into ONE intent and extract the coins.\n- price: they just want a current price.\n- risk: they want a risk read on ONE coin.\n- compare: they want TWO coins compared.\n- research: open-ended explainer / 'why' / 'what is' / deep-dive.\nAlso extract coin_a/symbol_a (the primary coin) and coin_b/symbol_b (second coin for compare; otherwise default ethereum/ETH). CoinGecko id slugs lowercase, tickers uppercase. Default coin_a bitcoin/BTC if no coin is named.",
+        "systemPrompt": "Classify the user's crypto request into ONE intent and extract coins.\n- price: they just want a current price of one coin.\n- risk: they want a risk read on ONE specific coin.\n- compare: they want two or MORE coins compared, OR a recommendation/pick among several (e.g. 'which is safest', 'what should I invest in: X, Y or Z', 'X vs Y vs Z').\n- research: open-ended explainer / 'why' / 'what is' / deep-dive.\nExtract coin_a/symbol_a = the primary single coin (default bitcoin/BTC). coin_ids = comma-separated CoinGecko id slugs of ALL coins mentioned, lowercase (e.g. 'bitcoin,solana,ethereum'); if none mentioned, 'bitcoin'.",
         "responseFormat": {
           "type": "json_schema",
           "json_schema": {
@@ -43,8 +43,7 @@
                 "intent",
                 "coin_a",
                 "symbol_a",
-                "coin_b",
-                "symbol_b"
+                "coin_ids"
               ],
               "properties": {
                 "intent": {
@@ -57,16 +56,16 @@
                   "type": "string"
                 },
                 "coin_a": {
-                  "type": "string"
+                  "type": "string",
+                  "description": "primary CoinGecko slug"
                 },
                 "symbol_a": {
-                  "type": "string"
+                  "type": "string",
+                  "description": "primary ticker, e.g. BTC"
                 },
-                "coin_b": {
-                  "type": "string"
-                },
-                "symbol_b": {
-                  "type": "string"
+                "coin_ids": {
+                  "type": "string",
+                  "description": "comma-separated CoinGecko slugs of all coins mentioned"
                 }
               },
               "additionalProperties": false
@@ -281,7 +280,7 @@
       "name": "Compare Markets",
       "type": "lyzr-nodes-base.httpRequest",
       "parameters": {
-        "url": "=https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids={{ $('Classifier').json.output.coin_a }},{{ $('Classifier').json.output.coin_b }}&price_change_percentage=24h",
+        "url": "=https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids={{ $('Classifier').json.output.coin_ids }}&price_change_percentage=24h",
         "method": "GET",
         "sendHeaders": false
       },
@@ -303,8 +302,8 @@
         "provider": "openai",
         "maxTokens": 1536,
         "temperature": 0.3,
-        "prompt": "=Coin A: {{ $('Classifier').json.output.coin_a }}  Coin B: {{ $('Classifier').json.output.coin_b }}\n\nMarkets (both): {{ $('Compare Markets').json.body }}",
-        "systemPrompt": "Compare the two coins in PLAIN TEXT only (no markdown, no tables). Give one line per coin like 'Bitcoin: $X, +Y% 24h, market cap $Z', then a 'Verdict:' line on which looks riskier right now and why. Use real numbers. End with 'Not financial advice.'"
+        "prompt": "=Coins: {{ $('Classifier').json.output.coin_ids }}\n\nMarkets: {{ $('Compare Markets').json.body }}",
+        "systemPrompt": "You compare crypto coins for an investor and recommend the SAFEST option. PLAIN TEXT only — no markdown, no tables. Give one line per coin: name, price, 24h % change, market cap. Then a 'Verdict:' line that names the relatively safest pick (heuristic: larger market cap + smaller 24h move = relatively safer) and one sentence why. Add a one-line caveat that all crypto is high-risk and this is not financial advice. Use real numbers."
       },
       "position": [
         1100,
