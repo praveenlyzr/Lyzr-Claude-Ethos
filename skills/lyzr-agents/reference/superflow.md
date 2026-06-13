@@ -184,12 +184,14 @@ For **plain agents** (not SuperFlow), runtime tool use still needs a `tool_confi
 
 ## Example in this skill
 - `examples/superflow-crypto-risk-desk.json` — the full, importable demo on the official
-  `httpRequest` pattern. **13 nodes:** Trigger → Extract Coin (`lyzr.llm` + `responseFormat`) →
-  **5 live `httpRequest` fetches** (CoinGecko markets + Coinbase spot + global + Fear&Greed +
-  7-day history, retry/backoff each) → **Compute Volatility (`code` node)** → **Risk Strategist**
-  that delegates to 3 `isSubAgent` specialists (Price Agent reconciles the two price feeds, Context
-  Agent reads regime, Red Team argues the contrarian case) → Output. Dynamic per coin; showcases
-  httpRequest + code + responseFormat + multi-sub-agent ReAct in one flow.
+  `httpRequest` pattern. **16 nodes — compares TWO coins:** Trigger → Extract Coins (`lyzr.llm` +
+  `responseFormat` → coin A & B) → **7 live `httpRequest` fetches** (one CoinGecko markets call for
+  both coins, Coinbase spot ×2, global, Fear&Greed, 7-day history ×2, retry/backoff each) →
+  **2 `code` nodes** computing each coin's 7-day volatility/trend/range → **Risk Strategist** that
+  delegates to 3 `isSubAgent` specialists (Price Agent — called once per coin to reconcile its two
+  price feeds; Context Agent — shared regime; Red Team — challenges the verdict), assigns each coin a
+  risk level, and outputs a side-by-side comparison brief with a verdict. Showcases httpRequest +
+  code + responseFormat + multi-sub-agent ReAct in one flow.
 - `examples/superflow-official/` — the 7 official Lyzr SuperFlow examples (Ask the AI, Code Reviewer,
   Web Page Summarizer [httpRequest], Batch Sentiment [code+loop+responseFormat], Smart Email Triage
   [switch], Research Swarm [taskDecomposition], ReAct Agent [orchestrator+sub-agents]) — the
