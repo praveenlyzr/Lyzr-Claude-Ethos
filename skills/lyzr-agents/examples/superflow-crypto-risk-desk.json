@@ -7,11 +7,19 @@
       "type": "lyzr-nodes-base.trigger",
       "parameters": {
         "inputSchema": [
-          { "name": "chatInput", "type": "string", "required": true, "multiline": true,
-            "description": "Two coins to compare, e.g. 'Compare Solana vs Ethereum risk' (one coin works too — it's compared against Bitcoin)" }
+          {
+            "name": "chatInput",
+            "type": "string",
+            "required": true,
+            "multiline": true,
+            "description": "Two coins to compare, e.g. 'Compare Solana vs Ethereum risk' (one coin works too — it's compared against Bitcoin)"
+          }
         ]
       },
-      "position": [40, 420]
+      "position": [
+        40,
+        420
+      ]
     },
     {
       "id": "node_extract",
@@ -31,19 +39,39 @@
             "strict": true,
             "schema": {
               "type": "object",
-              "required": ["coin_a", "symbol_a", "coin_b", "symbol_b"],
+              "required": [
+                "coin_a",
+                "symbol_a",
+                "coin_b",
+                "symbol_b"
+              ],
               "properties": {
-                "coin_a": { "type": "string", "description": "CoinGecko id slug for coin A" },
-                "symbol_a": { "type": "string", "description": "Ticker for coin A, e.g. SOL" },
-                "coin_b": { "type": "string", "description": "CoinGecko id slug for coin B" },
-                "symbol_b": { "type": "string", "description": "Ticker for coin B, e.g. ETH" }
+                "coin_a": {
+                  "type": "string",
+                  "description": "CoinGecko id slug for coin A"
+                },
+                "symbol_a": {
+                  "type": "string",
+                  "description": "Ticker for coin A, e.g. SOL"
+                },
+                "coin_b": {
+                  "type": "string",
+                  "description": "CoinGecko id slug for coin B"
+                },
+                "symbol_b": {
+                  "type": "string",
+                  "description": "Ticker for coin B, e.g. ETH"
+                }
               },
               "additionalProperties": false
             }
           }
         }
       },
-      "position": [280, 420]
+      "position": [
+        280,
+        420
+      ]
     },
     {
       "id": "node_markets",
@@ -54,8 +82,14 @@
         "method": "GET",
         "sendHeaders": false
       },
-      "settings": { "retryOnFail": true, "backoff": "exponential" },
-      "position": [520, 80]
+      "settings": {
+        "retryOnFail": true,
+        "backoff": "exponential"
+      },
+      "position": [
+        520,
+        80
+      ]
     },
     {
       "id": "node_cb_a",
@@ -66,8 +100,14 @@
         "method": "GET",
         "sendHeaders": false
       },
-      "settings": { "retryOnFail": true, "backoff": "exponential" },
-      "position": [520, 200]
+      "settings": {
+        "retryOnFail": true,
+        "backoff": "exponential"
+      },
+      "position": [
+        520,
+        200
+      ]
     },
     {
       "id": "node_cb_b",
@@ -78,8 +118,14 @@
         "method": "GET",
         "sendHeaders": false
       },
-      "settings": { "retryOnFail": true, "backoff": "exponential" },
-      "position": [520, 320]
+      "settings": {
+        "retryOnFail": true,
+        "backoff": "exponential"
+      },
+      "position": [
+        520,
+        320
+      ]
     },
     {
       "id": "node_global",
@@ -90,8 +136,14 @@
         "method": "GET",
         "sendHeaders": false
       },
-      "settings": { "retryOnFail": true, "backoff": "exponential" },
-      "position": [520, 440]
+      "settings": {
+        "retryOnFail": true,
+        "backoff": "exponential"
+      },
+      "position": [
+        520,
+        440
+      ]
     },
     {
       "id": "node_sentiment",
@@ -102,8 +154,14 @@
         "method": "GET",
         "sendHeaders": false
       },
-      "settings": { "retryOnFail": true, "backoff": "exponential" },
-      "position": [520, 560]
+      "settings": {
+        "retryOnFail": true,
+        "backoff": "exponential"
+      },
+      "position": [
+        520,
+        560
+      ]
     },
     {
       "id": "node_hist_a",
@@ -114,8 +172,14 @@
         "method": "GET",
         "sendHeaders": false
       },
-      "settings": { "retryOnFail": true, "backoff": "exponential" },
-      "position": [520, 680]
+      "settings": {
+        "retryOnFail": true,
+        "backoff": "exponential"
+      },
+      "position": [
+        520,
+        680
+      ]
     },
     {
       "id": "node_vol_a",
@@ -124,7 +188,10 @@
       "parameters": {
         "jsCode": "const b = typeof $json.body === 'string' ? JSON.parse($json.body) : ($json.body || {});\nconst prices = (b.prices || []).map(p => p[1]).filter(x => typeof x === 'number');\nconst rets = prices.slice(1).map((p, i) => (p - prices[i]) / prices[i]);\nconst mean = rets.length ? rets.reduce((a, b) => a + b, 0) / rets.length : 0;\nconst vol = rets.length ? Math.sqrt(rets.reduce((a, b) => a + (b - mean) ** 2, 0) / rets.length) * 100 : 0;\nconst trend = prices.length > 1 ? (prices[prices.length - 1] - prices[0]) / prices[0] * 100 : 0;\nconst hi = prices.length ? Math.max(...prices) : 0;\nconst lo = prices.length ? Math.min(...prices) : 0;\nconst range = hi ? (hi - lo) / hi * 100 : 0;\n[{ json: { volatility_7d_pct: Math.round(vol * 100) / 100, trend_7d_pct: Math.round(trend * 100) / 100, range_7d_pct: Math.round(range * 100) / 100, points: prices.length } }];"
       },
-      "position": [760, 680]
+      "position": [
+        760,
+        680
+      ]
     },
     {
       "id": "node_hist_b",
@@ -135,8 +202,14 @@
         "method": "GET",
         "sendHeaders": false
       },
-      "settings": { "retryOnFail": true, "backoff": "exponential" },
-      "position": [1000, 680]
+      "settings": {
+        "retryOnFail": true,
+        "backoff": "exponential"
+      },
+      "position": [
+        1000,
+        680
+      ]
     },
     {
       "id": "node_vol_b",
@@ -145,7 +218,10 @@
       "parameters": {
         "jsCode": "const b = typeof $json.body === 'string' ? JSON.parse($json.body) : ($json.body || {});\nconst prices = (b.prices || []).map(p => p[1]).filter(x => typeof x === 'number');\nconst rets = prices.slice(1).map((p, i) => (p - prices[i]) / prices[i]);\nconst mean = rets.length ? rets.reduce((a, b) => a + b, 0) / rets.length : 0;\nconst vol = rets.length ? Math.sqrt(rets.reduce((a, b) => a + (b - mean) ** 2, 0) / rets.length) * 100 : 0;\nconst trend = prices.length > 1 ? (prices[prices.length - 1] - prices[0]) / prices[0] * 100 : 0;\nconst hi = prices.length ? Math.max(...prices) : 0;\nconst lo = prices.length ? Math.min(...prices) : 0;\nconst range = hi ? (hi - lo) / hi * 100 : 0;\n[{ json: { volatility_7d_pct: Math.round(vol * 100) / 100, trend_7d_pct: Math.round(trend * 100) / 100, range_7d_pct: Math.round(range * 100) / 100, points: prices.length } }];"
       },
-      "position": [1240, 680]
+      "position": [
+        1240,
+        680
+      ]
     },
     {
       "id": "node_strategist",
@@ -157,9 +233,12 @@
         "maxTokens": 3000,
         "temperature": 0.4,
         "prompt": "=User request: {{ $('Trigger').json.chatInput }}\nCoin A: {{ $('Extract Coins').json.output.coin_a }} ({{ $('Extract Coins').json.output.symbol_a }})\nCoin B: {{ $('Extract Coins').json.output.coin_b }} ({{ $('Extract Coins').json.output.symbol_b }})\n\nMARKETS (CoinGecko, BOTH coins):\n{{ $('Fetch Markets').json.body }}\n\nCOINBASE SPOT — A: {{ $('Fetch Coinbase A').json.body }}\nCOINBASE SPOT — B: {{ $('Fetch Coinbase B').json.body }}\n\nGlobal market:\n{{ $('Fetch Global').json.body }}\n\nFear & Greed:\n{{ $('Fetch Sentiment').json.body }}\n\n7-DAY STATS — A: vol={{ $('Compute Vol A').json.volatility_7d_pct }}% trend={{ $('Compute Vol A').json.trend_7d_pct }}% range={{ $('Compute Vol A').json.range_7d_pct }}%\n7-DAY STATS — B: vol={{ $('Compute Vol B').json.volatility_7d_pct }}% trend={{ $('Compute Vol B').json.trend_7d_pct }}% range={{ $('Compute Vol B').json.range_7d_pct }}%",
-        "systemPrompt": "You are the lead of a crypto risk desk COMPARING two coins (A and B). You have three sub-agents:\n• Price Agent — reconciles a trustworthy USD price for ONE coin at a time from its two sources (CoinGecko + Coinbase).\n• Context Agent — reads the shared market regime from global data + Fear & Greed.\n• Red Team — argues the contrarian case against your verdict.\n\nSteps:\n1. Call the Price Agent TWICE — once for coin A (its CoinGecko price + Coinbase A) and once for coin B — to get a trusted price for each. Debate any discrepancy.\n2. Call the Context Agent once for the regime.\n3. Assign each coin a Risk Level using: High if its |24h| >= 8% or its 7d volatility >= 6% or Fear&Greed <=25 or >=80; Elevated if |24h| >= 4% or 7d vol >= 3% or Fear&Greed <=40 or >=70; else Calm. Then decide which coin is RISKIER right now and why.\n4. Send your provisional verdict to the Red Team and weigh its strongest counterpoint — adjust or rebut.\n5. Write the final comparison brief as clean markdown:\n\n# Risk Comparison — <A> vs <B>\n\n| Metric | <A> | <B> |\n|---|---|---|\n| Price | <trusted> | <trusted> |\n| 24h % | | |\n| 7d vol | % | % |\n| Risk | <level> | <level> |\n\n**Market regime:** <Context Agent's read>\n**Verdict:** <which coin is riskier right now and why, 1-2 sentences>\n**Counterpoint:** <Red Team's challenge + your response>\n**What to watch**\n- <bullet>\n- <bullet>\n\n_Not financial advice - always do your own research._\n\nUse real numbers and name both coins."
+        "systemPrompt": "You are the lead of a crypto risk desk COMPARING two coins (A and B). You have three sub-agents:\n• Price Agent — reconciles a trustworthy USD price for ONE coin at a time from its two sources (CoinGecko + Coinbase).\n• Context Agent — reads the shared market regime from global data + Fear & Greed.\n• Red Team — argues the contrarian case against your verdict.\n\nSteps:\n1. Call the Price Agent TWICE — once for coin A (its CoinGecko price + Coinbase A) and once for coin B — to get a trusted price for each. Debate any discrepancy.\n2. Call the Context Agent once for the regime.\n3. Assign each coin a Risk Level using: High if its |24h| >= 8% or its 7d volatility >= 6% or Fear&Greed <=25 or >=80; Elevated if |24h| >= 4% or 7d vol >= 3% or Fear&Greed <=40 or >=70; else Calm. Then decide which coin is RISKIER right now and why.\n4. Send your provisional verdict to the Red Team and weigh its strongest counterpoint — adjust or rebut.\n5. Write the final answer in PLAIN TEXT only — no markdown (no #, *, tables, or bullet symbols). Use simple labeled lines, e.g.:\nRisk comparison: <A> vs <B>\n<A>: price <..>, 24h <..>, 7d vol <..>%, risk <Calm|Elevated|High>\n<B>: price <..>, 24h <..>, 7d vol <..>%, risk <Calm|Elevated|High>\nRegime: <Context Agent's read>\nVerdict: <which coin is riskier right now and why>\nCounterpoint: <Red Team's challenge + your response>\nWatch: <two things to monitor>\nNot financial advice - always do your own research.\n\nUse real numbers and name both coins."
       },
-      "position": [1500, 420]
+      "position": [
+        1500,
+        420
+      ]
     },
     {
       "id": "node_price_agent",
@@ -174,7 +253,10 @@
         "description": "Reconcile ONE coin's USD price across the provided sources. Returns the single best price to trust, a confidence 0-1, and any cross-source discrepancy. Reconsiders honestly if challenged.",
         "systemPrompt": "You are a price-reconciliation specialist. For the ONE coin you are asked about, given its USD price quotes from one or more sources (e.g. CoinGecko current_price and Coinbase spot amount), output: (1) the single best USD price to trust, (2) confidence 0.0-1.0, (3) any discrepancy — if sources differ by >0.5%, give both numbers, the % gap, and which you'd trust and why. If you only get one source, say so and lower confidence. Be terse and numeric. If challenged, re-examine honestly."
       },
-      "position": [1780, 160]
+      "position": [
+        1780,
+        160
+      ]
     },
     {
       "id": "node_context_agent",
@@ -189,7 +271,10 @@
         "description": "Read the market regime from global crypto data (total market cap, BTC dominance, 24h change) and the Fear & Greed index. Returns a 2-3 sentence regime/positioning read.",
         "systemPrompt": "You are a crypto market strategist. Using total market cap + its 24h change, BTC dominance, and the Fear & Greed value/label, state the regime in 2-3 sentences: risk-on vs risk-off, whether capital is rotating to/from BTC, and flag any contrarian extreme (Fear & Greed <=25 or >=80). Be concise."
       },
-      "position": [1780, 420]
+      "position": [
+        1780,
+        420
+      ]
     },
     {
       "id": "node_redteam",
@@ -204,33 +289,172 @@
         "description": "Stress-test the desk's comparison verdict by arguing the strongest contrarian case against which coin was called riskier.",
         "systemPrompt": "You are a sharp devil's-advocate risk analyst. Given the desk's provisional verdict on which of the two coins is riskier and the supporting data, argue the STRONGEST credible counter-case: why the ranking might be wrong, with the specific evidence. One tight counterpoint (2-3 sentences), not a list. Adversarial but honest; if the verdict looks solid, name the single factor that would most change it."
       },
-      "position": [1780, 680]
+      "position": [
+        1780,
+        680
+      ]
     },
     {
       "id": "node_output",
       "name": "Output",
       "type": "lyzr-nodes-base.noOp",
-      "parameters": { "outputField": "output", "outputSourceNode": "Risk Strategist" },
-      "position": [2060, 420]
+      "parameters": {
+        "outputField": "output",
+        "outputSourceNode": "Risk Strategist"
+      },
+      "position": [
+        2060,
+        420
+      ]
     }
   ],
   "connections": {
-    "Trigger": { "main": [[{ "node": "Extract Coins", "type": "main", "index": 0 }]] },
-    "Extract Coins": { "main": [[{ "node": "Fetch Markets", "type": "main", "index": 0 }]] },
-    "Fetch Markets": { "main": [[{ "node": "Fetch Coinbase A", "type": "main", "index": 0 }]] },
-    "Fetch Coinbase A": { "main": [[{ "node": "Fetch Coinbase B", "type": "main", "index": 0 }]] },
-    "Fetch Coinbase B": { "main": [[{ "node": "Fetch Global", "type": "main", "index": 0 }]] },
-    "Fetch Global": { "main": [[{ "node": "Fetch Sentiment", "type": "main", "index": 0 }]] },
-    "Fetch Sentiment": { "main": [[{ "node": "Fetch History A", "type": "main", "index": 0 }]] },
-    "Fetch History A": { "main": [[{ "node": "Compute Vol A", "type": "main", "index": 0 }]] },
-    "Compute Vol A": { "main": [[{ "node": "Fetch History B", "type": "main", "index": 0 }]] },
-    "Fetch History B": { "main": [[{ "node": "Compute Vol B", "type": "main", "index": 0 }]] },
-    "Compute Vol B": { "main": [[{ "node": "Risk Strategist", "type": "main", "index": 0 }]] },
-    "Risk Strategist": { "main": [[
-      { "node": "Price Agent", "type": "main", "index": 0 },
-      { "node": "Context Agent", "type": "main", "index": 0 },
-      { "node": "Red Team", "type": "main", "index": 0 },
-      { "node": "Output", "type": "main", "index": 0 }
-    ]] }
+    "Trigger": {
+      "main": [
+        [
+          {
+            "node": "Extract Coins",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Coins": {
+      "main": [
+        [
+          {
+            "node": "Fetch Markets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Markets": {
+      "main": [
+        [
+          {
+            "node": "Fetch Coinbase A",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Coinbase A": {
+      "main": [
+        [
+          {
+            "node": "Fetch Coinbase B",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Coinbase B": {
+      "main": [
+        [
+          {
+            "node": "Fetch Global",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Global": {
+      "main": [
+        [
+          {
+            "node": "Fetch Sentiment",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Sentiment": {
+      "main": [
+        [
+          {
+            "node": "Fetch History A",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch History A": {
+      "main": [
+        [
+          {
+            "node": "Compute Vol A",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Compute Vol A": {
+      "main": [
+        [
+          {
+            "node": "Fetch History B",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch History B": {
+      "main": [
+        [
+          {
+            "node": "Compute Vol B",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Compute Vol B": {
+      "main": [
+        [
+          {
+            "node": "Risk Strategist",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Risk Strategist": {
+      "main": [
+        [
+          {
+            "node": "Price Agent",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Context Agent",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Red Team",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
   }
 }

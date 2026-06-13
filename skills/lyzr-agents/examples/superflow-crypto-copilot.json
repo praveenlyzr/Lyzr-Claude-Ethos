@@ -7,11 +7,19 @@
       "type": "lyzr-nodes-base.trigger",
       "parameters": {
         "inputSchema": [
-          { "name": "chatInput", "type": "string", "required": true, "multiline": true,
-            "description": "Ask anything about crypto: 'price of SOL', 'how risky is ETH', 'compare BTC vs SOL', 'explain restaking risks'" }
+          {
+            "name": "chatInput",
+            "type": "string",
+            "required": true,
+            "multiline": true,
+            "description": "Ask anything about crypto: 'price of SOL', 'how risky is ETH', 'compare BTC vs SOL', 'explain restaking risks'"
+          }
         ]
       },
-      "position": [40, 460]
+      "position": [
+        40,
+        460
+      ]
     },
     {
       "id": "node_classifier",
@@ -31,20 +39,45 @@
             "strict": true,
             "schema": {
               "type": "object",
-              "required": ["intent", "coin_a", "symbol_a", "coin_b", "symbol_b"],
+              "required": [
+                "intent",
+                "coin_a",
+                "symbol_a",
+                "coin_b",
+                "symbol_b"
+              ],
               "properties": {
-                "intent": { "enum": ["price", "risk", "compare", "research"], "type": "string" },
-                "coin_a": { "type": "string" },
-                "symbol_a": { "type": "string" },
-                "coin_b": { "type": "string" },
-                "symbol_b": { "type": "string" }
+                "intent": {
+                  "enum": [
+                    "price",
+                    "risk",
+                    "compare",
+                    "research"
+                  ],
+                  "type": "string"
+                },
+                "coin_a": {
+                  "type": "string"
+                },
+                "symbol_a": {
+                  "type": "string"
+                },
+                "coin_b": {
+                  "type": "string"
+                },
+                "symbol_b": {
+                  "type": "string"
+                }
               },
               "additionalProperties": false
             }
           }
         }
       },
-      "position": [300, 460]
+      "position": [
+        300,
+        460
+      ]
     },
     {
       "id": "node_route",
@@ -53,139 +86,428 @@
       "parameters": {
         "rules": {
           "rules": [
-            { "conditions": { "conditions": [ { "leftType": "string", "leftValue": "={{ $json.output.intent }}", "operation": "equals", "rightType": "string", "rightValue": "price" } ] } },
-            { "conditions": { "conditions": [ { "leftType": "string", "leftValue": "={{ $json.output.intent }}", "operation": "equals", "rightType": "string", "rightValue": "risk" } ] } },
-            { "conditions": { "conditions": [ { "leftType": "string", "leftValue": "={{ $json.output.intent }}", "operation": "equals", "rightType": "string", "rightValue": "compare" } ] } },
-            { "conditions": { "conditions": [ { "leftType": "string", "leftValue": "={{ $json.output.intent }}", "operation": "equals", "rightType": "string", "rightValue": "research" } ] } }
+            {
+              "conditions": {
+                "conditions": [
+                  {
+                    "leftType": "string",
+                    "leftValue": "={{ $json.output.intent }}",
+                    "operation": "equals",
+                    "rightType": "string",
+                    "rightValue": "price"
+                  }
+                ]
+              }
+            },
+            {
+              "conditions": {
+                "conditions": [
+                  {
+                    "leftType": "string",
+                    "leftValue": "={{ $json.output.intent }}",
+                    "operation": "equals",
+                    "rightType": "string",
+                    "rightValue": "risk"
+                  }
+                ]
+              }
+            },
+            {
+              "conditions": {
+                "conditions": [
+                  {
+                    "leftType": "string",
+                    "leftValue": "={{ $json.output.intent }}",
+                    "operation": "equals",
+                    "rightType": "string",
+                    "rightValue": "compare"
+                  }
+                ]
+              }
+            },
+            {
+              "conditions": {
+                "conditions": [
+                  {
+                    "leftType": "string",
+                    "leftValue": "={{ $json.output.intent }}",
+                    "operation": "equals",
+                    "rightType": "string",
+                    "rightValue": "research"
+                  }
+                ]
+              }
+            }
           ]
         }
       },
-      "position": [560, 460]
+      "position": [
+        560,
+        460
+      ]
     },
-
     {
       "id": "node_price_fetch",
       "name": "Fetch Price",
       "type": "lyzr-nodes-base.httpRequest",
       "parameters": {
         "url": "=https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids={{ $('Classifier').json.output.coin_a }}&price_change_percentage=24h",
-        "method": "GET", "sendHeaders": false
+        "method": "GET",
+        "sendHeaders": false
       },
-      "settings": { "retryOnFail": true, "backoff": "exponential" },
-      "position": [840, 60]
+      "settings": {
+        "retryOnFail": true,
+        "backoff": "exponential"
+      },
+      "position": [
+        840,
+        60
+      ]
     },
     {
       "id": "node_price_answer",
       "name": "Price Answer",
       "type": "lyzr-nodes-base.lyzr.llm",
       "parameters": {
-        "model": "gpt-4o-mini", "provider": "openai", "maxTokens": 256, "temperature": 0.2,
+        "model": "gpt-4o-mini",
+        "provider": "openai",
+        "maxTokens": 256,
+        "temperature": 0.2,
         "prompt": "=Coin: {{ $('Classifier').json.output.coin_a }}\nData: {{ $('Fetch Price').json.body }}",
-        "systemPrompt": "Report the coin's current USD price and 24h % change in one or two short lines. Use the real numbers. Nothing else."
+        "systemPrompt": "Report the coin's current USD price and 24h % change in one or two short lines of PLAIN TEXT (no markdown). Use the real numbers. Nothing else."
       },
-      "position": [1100, 60]
+      "position": [
+        1100,
+        60
+      ]
     },
-    { "id": "node_price_out", "name": "Price Output", "type": "lyzr-nodes-base.noOp",
-      "parameters": { "outputField": "output" }, "position": [1360, 60] },
-
+    {
+      "id": "node_price_out",
+      "name": "Price Output",
+      "type": "lyzr-nodes-base.noOp",
+      "parameters": {
+        "outputField": "output"
+      },
+      "position": [
+        1360,
+        60
+      ]
+    },
     {
       "id": "node_risk_market",
       "name": "Risk Markets",
       "type": "lyzr-nodes-base.httpRequest",
       "parameters": {
         "url": "=https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids={{ $('Classifier').json.output.coin_a }}&price_change_percentage=24h",
-        "method": "GET", "sendHeaders": false
+        "method": "GET",
+        "sendHeaders": false
       },
-      "settings": { "retryOnFail": true, "backoff": "exponential" },
-      "position": [840, 240]
+      "settings": {
+        "retryOnFail": true,
+        "backoff": "exponential"
+      },
+      "position": [
+        840,
+        240
+      ]
     },
     {
       "id": "node_risk_global",
       "name": "Risk Global",
       "type": "lyzr-nodes-base.httpRequest",
-      "parameters": { "url": "https://api.coingecko.com/api/v3/global", "method": "GET", "sendHeaders": false },
-      "settings": { "retryOnFail": true, "backoff": "exponential" },
-      "position": [1060, 240]
+      "parameters": {
+        "url": "https://api.coingecko.com/api/v3/global",
+        "method": "GET",
+        "sendHeaders": false
+      },
+      "settings": {
+        "retryOnFail": true,
+        "backoff": "exponential"
+      },
+      "position": [
+        1060,
+        240
+      ]
     },
     {
       "id": "node_risk_sent",
       "name": "Risk Sentiment",
       "type": "lyzr-nodes-base.httpRequest",
-      "parameters": { "url": "https://api.alternative.me/fng/?limit=1", "method": "GET", "sendHeaders": false },
-      "settings": { "retryOnFail": true, "backoff": "exponential" },
-      "position": [1280, 240]
+      "parameters": {
+        "url": "https://api.alternative.me/fng/?limit=1",
+        "method": "GET",
+        "sendHeaders": false
+      },
+      "settings": {
+        "retryOnFail": true,
+        "backoff": "exponential"
+      },
+      "position": [
+        1280,
+        240
+      ]
     },
     {
       "id": "node_risk_analyst",
       "name": "Risk Analyst",
       "type": "lyzr-nodes-base.lyzr.llm",
       "parameters": {
-        "model": "gpt-4o-mini", "provider": "openai", "maxTokens": 1536, "temperature": 0.3,
+        "model": "gpt-4o-mini",
+        "provider": "openai",
+        "maxTokens": 1536,
+        "temperature": 0.3,
         "prompt": "=Coin: {{ $('Classifier').json.output.coin_a }}\n\nMarket: {{ $('Risk Markets').json.body }}\n\nGlobal: {{ $('Risk Global').json.body }}\n\nFear & Greed: {{ $('Risk Sentiment').json.body }}",
-        "systemPrompt": "You are a crypto risk analyst. Write a short risk brief for the coin: Headline; Price + 24h %; Market regime (BTC dominance + total-cap trend + Fear & Greed); Risk Level — exactly Calm / Elevated / High with a one-line rationale (High if |24h| >= 8% or Fear&Greed <=25 or >=80; Elevated if |24h| >= 4% or Fear&Greed <=40 or >=70; else Calm); 2 'what to watch' bullets. End 'Not financial advice - always do your own research.' Use real numbers."
+        "systemPrompt": "You are a crypto risk analyst. Write a short risk brief in PLAIN TEXT only — no markdown (no #, *, tables, or bullet symbols); use simple labeled lines. Include: a one-line headline; a 'Price:' line with 24h %; a 'Regime:' line (BTC dominance + total-cap trend + Fear & Greed); a 'Risk:' line that is exactly Calm / Elevated / High with a one-line rationale (High if |24h| >= 8% or Fear&Greed <=25 or >=80; Elevated if |24h| >= 4% or Fear&Greed <=40 or >=70; else Calm); a 'Watch:' line with two things. End with 'Not financial advice - always do your own research.' Use real numbers."
       },
-      "position": [1500, 240]
+      "position": [
+        1500,
+        240
+      ]
     },
-    { "id": "node_risk_out", "name": "Risk Output", "type": "lyzr-nodes-base.noOp",
-      "parameters": { "outputField": "output" }, "position": [1720, 240] },
-
+    {
+      "id": "node_risk_out",
+      "name": "Risk Output",
+      "type": "lyzr-nodes-base.noOp",
+      "parameters": {
+        "outputField": "output"
+      },
+      "position": [
+        1720,
+        240
+      ]
+    },
     {
       "id": "node_cmp_fetch",
       "name": "Compare Markets",
       "type": "lyzr-nodes-base.httpRequest",
       "parameters": {
         "url": "=https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids={{ $('Classifier').json.output.coin_a }},{{ $('Classifier').json.output.coin_b }}&price_change_percentage=24h",
-        "method": "GET", "sendHeaders": false
+        "method": "GET",
+        "sendHeaders": false
       },
-      "settings": { "retryOnFail": true, "backoff": "exponential" },
-      "position": [840, 520]
+      "settings": {
+        "retryOnFail": true,
+        "backoff": "exponential"
+      },
+      "position": [
+        840,
+        520
+      ]
     },
     {
       "id": "node_cmp_analyst",
       "name": "Compare Analyst",
       "type": "lyzr-nodes-base.lyzr.llm",
       "parameters": {
-        "model": "gpt-4o-mini", "provider": "openai", "maxTokens": 1536, "temperature": 0.3,
+        "model": "gpt-4o-mini",
+        "provider": "openai",
+        "maxTokens": 1536,
+        "temperature": 0.3,
         "prompt": "=Coin A: {{ $('Classifier').json.output.coin_a }}  Coin B: {{ $('Classifier').json.output.coin_b }}\n\nMarkets (both): {{ $('Compare Markets').json.body }}",
-        "systemPrompt": "Compare the two coins. Output a small markdown table (Price, 24h %, Market cap) for A vs B, then a one-line Verdict on which looks riskier right now and why. Use real numbers. End 'Not financial advice.'"
+        "systemPrompt": "Compare the two coins in PLAIN TEXT only (no markdown, no tables). Give one line per coin like 'Bitcoin: $X, +Y% 24h, market cap $Z', then a 'Verdict:' line on which looks riskier right now and why. Use real numbers. End with 'Not financial advice.'"
       },
-      "position": [1100, 520]
+      "position": [
+        1100,
+        520
+      ]
     },
-    { "id": "node_cmp_out", "name": "Compare Output", "type": "lyzr-nodes-base.noOp",
-      "parameters": { "outputField": "output" }, "position": [1360, 520] },
-
+    {
+      "id": "node_cmp_out",
+      "name": "Compare Output",
+      "type": "lyzr-nodes-base.noOp",
+      "parameters": {
+        "outputField": "output"
+      },
+      "position": [
+        1360,
+        520
+      ]
+    },
     {
       "id": "node_research",
       "name": "Research Swarm",
       "type": "lyzr-nodes-base.lyzr.taskDecomposition",
       "parameters": {
-        "model": "gpt-4o-mini", "provider": "openai", "prompt": "={{ $('Trigger').json.chatInput }}",
-        "maxTokens": 2048, "maxSubtasks": 5, "temperature": 0.4,
+        "model": "gpt-4o-mini",
+        "provider": "openai",
+        "prompt": "={{ $('Trigger').json.chatInput }}",
+        "maxTokens": 2048,
+        "maxSubtasks": 5,
+        "temperature": 0.4,
         "decompositionPrompt": "Break this crypto question into 3-5 focused, non-overlapping sub-questions (e.g. mechanism, adoption, risks, catalysts, competition). Each answerable in 2-3 sentences. Numbered list.",
-        "aggregationPrompt": "You are a crypto research editor. Synthesize the sub-answers into a brief: Overview, Key findings (bullets), Risks, Open questions. Concise. End 'Not financial advice - always do your own research.'"
+        "aggregationPrompt": "You are a crypto research editor. Synthesize the sub-answers into a PLAIN-TEXT brief — no markdown (no #, *, or bullet symbols). Use short labeled lines: Overview, Key findings, Risks, Open questions. Concise. End with 'Not financial advice - always do your own research.'"
       },
-      "position": [840, 700]
+      "position": [
+        840,
+        700
+      ]
     },
-    { "id": "node_research_out", "name": "Research Output", "type": "lyzr-nodes-base.noOp",
-      "parameters": { "outputField": "output" }, "position": [1100, 700] }
+    {
+      "id": "node_research_out",
+      "name": "Research Output",
+      "type": "lyzr-nodes-base.noOp",
+      "parameters": {
+        "outputField": "output"
+      },
+      "position": [
+        1100,
+        700
+      ]
+    }
   ],
   "connections": {
-    "Trigger": { "main": [[{ "node": "Classifier", "type": "main", "index": 0 }]] },
-    "Classifier": { "main": [[{ "node": "Route", "type": "main", "index": 0 }]] },
-    "Route": { "main": [
-      [{ "node": "Fetch Price", "type": "main", "index": 0 }],
-      [{ "node": "Risk Markets", "type": "main", "index": 0 }],
-      [{ "node": "Compare Markets", "type": "main", "index": 0 }],
-      [{ "node": "Research Swarm", "type": "main", "index": 0 }]
-    ] },
-    "Fetch Price": { "main": [[{ "node": "Price Answer", "type": "main", "index": 0 }]] },
-    "Price Answer": { "main": [[{ "node": "Price Output", "type": "main", "index": 0 }]] },
-    "Risk Markets": { "main": [[{ "node": "Risk Global", "type": "main", "index": 0 }]] },
-    "Risk Global": { "main": [[{ "node": "Risk Sentiment", "type": "main", "index": 0 }]] },
-    "Risk Sentiment": { "main": [[{ "node": "Risk Analyst", "type": "main", "index": 0 }]] },
-    "Risk Analyst": { "main": [[{ "node": "Risk Output", "type": "main", "index": 0 }]] },
-    "Compare Markets": { "main": [[{ "node": "Compare Analyst", "type": "main", "index": 0 }]] },
-    "Compare Analyst": { "main": [[{ "node": "Compare Output", "type": "main", "index": 0 }]] },
-    "Research Swarm": { "main": [[{ "node": "Research Output", "type": "main", "index": 0 }]] }
+    "Trigger": {
+      "main": [
+        [
+          {
+            "node": "Classifier",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Classifier": {
+      "main": [
+        [
+          {
+            "node": "Route",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route": {
+      "main": [
+        [
+          {
+            "node": "Fetch Price",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Risk Markets",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Compare Markets",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Research Swarm",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Price": {
+      "main": [
+        [
+          {
+            "node": "Price Answer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Price Answer": {
+      "main": [
+        [
+          {
+            "node": "Price Output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Risk Markets": {
+      "main": [
+        [
+          {
+            "node": "Risk Global",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Risk Global": {
+      "main": [
+        [
+          {
+            "node": "Risk Sentiment",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Risk Sentiment": {
+      "main": [
+        [
+          {
+            "node": "Risk Analyst",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Risk Analyst": {
+      "main": [
+        [
+          {
+            "node": "Risk Output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Compare Markets": {
+      "main": [
+        [
+          {
+            "node": "Compare Analyst",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Compare Analyst": {
+      "main": [
+        [
+          {
+            "node": "Compare Output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Research Swarm": {
+      "main": [
+        [
+          {
+            "node": "Research Output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
   }
 }
