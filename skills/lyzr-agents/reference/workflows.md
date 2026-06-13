@@ -49,7 +49,8 @@ Three node `function`s:
 - **Gating gotcha (verified both ways):** a branch node fires conditionally only if it `depends` on the
   **router**. If branches depend on an always-upstream node instead, all of them run.
 
-Full working example: `examples/superflow-crypto-risk-desk.json` (2 live APIs → analyst → router → one of 3 composers).
+(For the **visual** builder and a full importable example, see [`superflow.md`](superflow.md) +
+`examples/superflow-crypto-copilot.json` — a different product from this `/v3/workflows` engine.)
 
 `flow_data` shape (from live flows):
 ```json

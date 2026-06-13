@@ -175,33 +175,39 @@ mid-reasoning. So the "main agent delegates to a specialist that goes and fetche
 achievable; instead use a **data layer + reasoning layer**: (1) a **data layer** of `httpRequest`
 nodes fetches everything up front, (2) a **reasoning layer** — a ReAct orchestrator that delegates
 to `isSubAgent` specialists which *reason over* the fetched data (and debate, multi-step), then writes
-the final brief itself. See `examples/superflow-crypto-risk-desk.json` (Extract → 4 httpRequest →
-Strategist ⇄ Price/Context agents → Output). (You can optionally add a plain `lyzr.llm` "Visualizer"
-node after the orchestrator to reformat the output before Output, but it's not required.)
+the final answer itself. (You can optionally add a plain `lyzr.llm` "Visualizer" node after the
+orchestrator to reformat before Output, but it's not required.)
 
 For **plain agents** (not SuperFlow), runtime tool use still needs a `tool_configs` entry +
 `TOOL_CALLING` feature — see [`tools.md`](tools.md).
 
 ## Example in this skill
-- `examples/superflow-crypto-risk-desk.json` — the full, importable demo on the official
-  `httpRequest` pattern. **16 nodes — compares TWO coins:** Trigger → Extract Coins (`lyzr.llm` +
-  `responseFormat` → coin A & B) → **7 live `httpRequest` fetches** (one CoinGecko markets call for
-  both coins, Coinbase spot ×2, global, Fear&Greed, 7-day history ×2, retry/backoff each) →
-  **2 `code` nodes** computing each coin's 7-day volatility/trend/range → **Risk Strategist** that
-  delegates to 3 `isSubAgent` specialists (Price Agent — called once per coin to reconcile its two
-  price feeds; Context Agent — shared regime; Red Team — challenges the verdict), assigns each coin a
-  risk level, and outputs a side-by-side comparison brief with a verdict. Showcases httpRequest +
-  code + responseFormat + multi-sub-agent ReAct in one flow.
-- `examples/superflow-crypto-copilot.json` — an **agentic, intent-routed** copilot: a Classifier
-  (`responseFormat` → intent + coins) feeds a **`switch`** that routes each question down a different
-  specialist branch (price lookup / risk brief / two-coin compare / `taskDecomposition` research).
-  The path is chosen autonomously per request — different inputs do genuinely different things. The
-  agentic-ness lives in classify+route+decompose (SuperFlow agents can't fetch on demand, so data
-  fetching stays in each branch's `httpRequest` pipeline).
-- `examples/superflow-official/` — the 7 official Lyzr SuperFlow examples (Ask the AI, Code Reviewer,
-  Web Page Summarizer [httpRequest], Batch Sentiment [code+loop+responseFormat], Smart Email Triage
-  [switch], Research Swarm [taskDecomposition], ReAct Agent [orchestrator+sub-agents]) — the
-  authoritative schema reference. Start from these when building new flows.
+`examples/superflow-crypto-copilot.json` — the one canonical SuperFlow demo: an **agentic,
+intent-routed crypto copilot**. A Classifier (`lyzr.llm` + `responseFormat` →
+`{intent, coin_a, symbol_a, coin_ids}`) feeds a **`switch`** that routes each question down a
+different specialist branch:
+- **price** → `httpRequest` (CoinGecko markets) → one-line price answer
+- **risk** → markets + global + Fear&Greed `httpRequest` fetches → risk brief
+- **compare** → one markets call for ALL coins in `coin_ids` → ranked recommendation (safest pick)
+- **research** → `taskDecomposition` (AI Swarm) autonomously decomposes + synthesizes
+
+Each branch ends in its own `noOp` Output. It exercises most of the node catalog above: `trigger`
+(free-text), `responseFormat`, `switch` (4-way), `httpRequest` (templated URLs + retry/backoff
+`settings`), and `taskDecomposition`. Build new flows by composing these same nodes.
+
+## Design lessons (baked into the example)
+- **Route multi-option questions to `compare`.** "Which of X/Y/Z is safest / what should I invest
+  in" must capture ALL coins (a comma-separated `coin_ids`) and route to compare/recommend — a
+  single-item branch silently answers about only one. Make the classifier's `compare` intent
+  explicitly include "pick among several / which is safest".
+- **Plain-text output.** LLM nodes default to markdown; if you want plain prose, the node's
+  `systemPrompt` must explicitly forbid markdown (no `#`, `*`, tables, or bullet symbols) and ask
+  for labeled lines.
+- **Model for delegation.** `gpt-4o-mini` often under-calls sub-agents in a ReAct orchestrator;
+  bump the orchestrator to `gpt-4o` for reliable multi-sub-agent delegation.
+- **Data is a pipeline; reasoning is the agent.** SuperFlow agents can't fetch on demand (no working
+  agent-owned tools), so put `httpRequest` fetches in the pipeline and let agents reason/route over
+  the results.
 
 ## Durability story (for the pitch; doc-derived)
 SuperFlow's differentiator is durable, exactly-once execution: steps are journaled, completed steps
