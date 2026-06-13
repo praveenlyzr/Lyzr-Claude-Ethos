@@ -32,6 +32,7 @@ skills/lyzr-agents/
 │   ├── structured-output-agent.json  # Agent with strict JSON response_format
 │   ├── knowledge-base-agent.json     # Agent wired to a RAG knowledge base
 │   ├── manager-agent.json            # Manager that delegates to sub-agents
+│   ├── superflow-crypto-copilot.json    # SuperFlow (agentic): intent classifier → Switch routes price/risk/compare/research
 │   ├── superflow-crypto-risk-desk.json  # SuperFlow demo: dynamic coin → 3 httpRequest fetches → analyst
 │   └── superflow-official/           # 7 official Lyzr SuperFlow examples (authoritative schema)
 └── reference/                        # Per-domain API references (verified vs doc-derived)

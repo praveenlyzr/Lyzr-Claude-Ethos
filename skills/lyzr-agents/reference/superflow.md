@@ -192,6 +192,12 @@ For **plain agents** (not SuperFlow), runtime tool use still needs a `tool_confi
   price feeds; Context Agent — shared regime; Red Team — challenges the verdict), assigns each coin a
   risk level, and outputs a side-by-side comparison brief with a verdict. Showcases httpRequest +
   code + responseFormat + multi-sub-agent ReAct in one flow.
+- `examples/superflow-crypto-copilot.json` — an **agentic, intent-routed** copilot: a Classifier
+  (`responseFormat` → intent + coins) feeds a **`switch`** that routes each question down a different
+  specialist branch (price lookup / risk brief / two-coin compare / `taskDecomposition` research).
+  The path is chosen autonomously per request — different inputs do genuinely different things. The
+  agentic-ness lives in classify+route+decompose (SuperFlow agents can't fetch on demand, so data
+  fetching stays in each branch's `httpRequest` pipeline).
 - `examples/superflow-official/` — the 7 official Lyzr SuperFlow examples (Ask the AI, Code Reviewer,
   Web Page Summarizer [httpRequest], Batch Sentiment [code+loop+responseFormat], Smart Email Triage
   [switch], Research Swarm [taskDecomposition], ReAct Agent [orchestrator+sub-agents]) — the
