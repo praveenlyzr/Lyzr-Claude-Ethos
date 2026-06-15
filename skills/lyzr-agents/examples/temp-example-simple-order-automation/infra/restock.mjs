@@ -1,11 +1,12 @@
-// POST /restock {sku, qty} — adds qty to a SKU's stock (creates the SKU if new). Public, no auth.
+// POST /restock {sku, qty} — adds qty to stock (creates the SKU if new). Accepts query OR JSON body.
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient, UpdateCommand } from "@aws-sdk/lib-dynamodb";
 
 const ddb = DynamoDBDocumentClient.from(new DynamoDBClient({}));
 const TABLE = process.env.INVENTORY_TABLE;
 
-const parse = (e) => { try { return JSON.parse(e?.body || "{}"); } catch { return {}; } };
+// params may arrive as query string (?sku=&qty=) or JSON body; body wins if both present
+const params = (e) => { let b = {}; try { b = JSON.parse(e?.body || "{}"); } catch {} return { ...(e?.queryStringParameters || {}), ...b }; };
 const resp = (statusCode, body) => ({
   statusCode,
   headers: { "content-type": "application/json", "access-control-allow-origin": "*" },
@@ -13,9 +14,9 @@ const resp = (statusCode, body) => ({
 });
 
 export const handler = async (event) => {
-  const b = parse(event);
-  const sku = b.sku;
-  const qty = Number(b.qty);
+  const p = params(event);
+  const sku = p.sku;
+  const qty = Number(p.qty);
   if (!sku || !Number.isFinite(qty) || qty <= 0) return resp(400, { error: "sku and positive qty required" });
   const { Attributes } = await ddb.send(new UpdateCommand({
     TableName: TABLE,

@@ -1,0 +1,105 @@
+{
+  "name": "Simple Order Automation",
+  "nodes": [
+    {
+      "id": "node_trigger",
+      "name": "Trigger",
+      "type": "lyzr-nodes-base.trigger",
+      "parameters": {
+        "inputSchema": [
+          { "name": "sku", "type": "string", "required": true, "description": "Product SKU, e.g. WIDGET-001, GADGET-002, GIZMO-003" },
+          { "name": "qty", "type": "string", "required": true, "description": "Quantity ordered, e.g. 5" },
+          { "name": "customer", "type": "string", "required": true, "description": "Customer name, e.g. acme" }
+        ]
+      },
+      "position": [80, 320]
+    },
+    {
+      "id": "node_check",
+      "name": "Check Inventory",
+      "type": "lyzr-nodes-base.httpRequest",
+      "parameters": {
+        "url": "=https://f50853np0i.execute-api.us-east-1.amazonaws.com/inventory/{{ $('Trigger').json.sku }}?want={{ $('Trigger').json.qty }}",
+        "method": "GET",
+        "sendHeaders": false
+      },
+      "settings": { "retryOnFail": true, "backoff": "exponential" },
+      "position": [340, 320]
+    },
+    {
+      "id": "node_route",
+      "name": "Route",
+      "type": "lyzr-nodes-base.switch",
+      "parameters": {
+        "rules": {
+          "rules": [
+            { "conditions": { "conditions": [ { "leftType": "string", "leftValue": "={{ $json.body.sufficient }}", "operation": "equals", "rightType": "string", "rightValue": "yes" } ] } },
+            { "conditions": { "conditions": [ { "leftType": "string", "leftValue": "={{ $json.body.sufficient }}", "operation": "equals", "rightType": "string", "rightValue": "no" } ] } }
+          ]
+        }
+      },
+      "position": [600, 320]
+    },
+    {
+      "id": "node_order_direct",
+      "name": "Place Order",
+      "type": "lyzr-nodes-base.httpRequest",
+      "parameters": {
+        "url": "=https://f50853np0i.execute-api.us-east-1.amazonaws.com/orders?sku={{ $('Trigger').json.sku }}&qty={{ $('Trigger').json.qty }}&customer={{ $('Trigger').json.customer }}&delay_days=2",
+        "method": "POST",
+        "sendHeaders": false
+      },
+      "settings": { "retryOnFail": true, "backoff": "exponential" },
+      "position": [880, 180]
+    },
+    {
+      "id": "node_out_direct",
+      "name": "Order Placed",
+      "type": "lyzr-nodes-base.noOp",
+      "parameters": { "outputField": "output" },
+      "position": [1140, 180]
+    },
+    {
+      "id": "node_restock",
+      "name": "Restock",
+      "type": "lyzr-nodes-base.httpRequest",
+      "parameters": {
+        "url": "=https://f50853np0i.execute-api.us-east-1.amazonaws.com/restock?sku={{ $('Trigger').json.sku }}&qty={{ $('Check Inventory').json.body.restock_qty }}",
+        "method": "POST",
+        "sendHeaders": false
+      },
+      "settings": { "retryOnFail": true, "backoff": "exponential" },
+      "position": [880, 460]
+    },
+    {
+      "id": "node_order_restock",
+      "name": "Place Order (delayed)",
+      "type": "lyzr-nodes-base.httpRequest",
+      "parameters": {
+        "url": "=https://f50853np0i.execute-api.us-east-1.amazonaws.com/orders?sku={{ $('Trigger').json.sku }}&qty={{ $('Trigger').json.qty }}&customer={{ $('Trigger').json.customer }}&delay_days=5",
+        "method": "POST",
+        "sendHeaders": false
+      },
+      "settings": { "retryOnFail": true, "backoff": "exponential" },
+      "position": [1140, 460]
+    },
+    {
+      "id": "node_out_restock",
+      "name": "Order Placed (restocked)",
+      "type": "lyzr-nodes-base.noOp",
+      "parameters": { "outputField": "output" },
+      "position": [1400, 460]
+    }
+  ],
+  "connections": {
+    "Trigger": { "main": [[{ "node": "Check Inventory", "type": "main", "index": 0 }]] },
+    "Check Inventory": { "main": [[{ "node": "Route", "type": "main", "index": 0 }]] },
+    "Route": { "main": [
+      [{ "node": "Place Order", "type": "main", "index": 0 }],
+      [{ "node": "Restock", "type": "main", "index": 0 }]
+    ] },
+    "Place Order": { "main": [[{ "node": "Order Placed", "type": "main", "index": 0 }]] },
+    "Restock": { "main": [[{ "node": "Place Order (delayed)", "type": "main", "index": 0 }]] },
+    "Place Order (delayed)": { "main": [[{ "node": "Order Placed (restocked)", "type": "main", "index": 0 }]] }
+  }
+}

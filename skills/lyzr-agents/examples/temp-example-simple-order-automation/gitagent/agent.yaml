@@ -1,0 +1,25 @@
+spec_version: "0.1"
+name: order-fulfillment
+version: "0.1.0"
+description: >
+  Fulfills a customer order against a live inventory: checks stock, restocks when short,
+  places the order, and pushes the delivery date out when a restock was needed.
+  Same flow as the Lyzr SuperFlow next to it — here as a git-native CLI agent that curls
+  real, public, zero-auth AWS endpoints.
+
+model:
+  preferred: claude-opus-4-8
+  fallback: claude-sonnet-4-6
+  constraints:
+    - reasoning            # branching decision: stock-sufficient vs restock-then-order
+
+tools:
+  - curl                   # the only capability it needs: HTTP to the order API
+
+runtime:
+  max_turns: 12
+  timeout: 120
+
+# The order API this agent drives (public, no auth). Re-point if you redeploy.
+env:
+  API_BASE: "https://f50853np0i.execute-api.us-east-1.amazonaws.com"
