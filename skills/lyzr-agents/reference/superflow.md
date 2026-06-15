@@ -66,8 +66,17 @@ custom OpenAPI `lyzr.tool` nodes for fetching data** — no `provider_uuid`, no 
 no missing-required-param 4xx, no zero-param 404. (The `lyzr.tool`/`isSubAgent` path is for the
 ReAct "agent decides which tool to call" pattern, not deterministic data fetches.)
 
+**POST with a JSON body** (`typeVersion: 4`): build the body string in a preceding `code` node and
+template it into `jsonBody`.
+```json
+{ "name": "Submit Filing", "type": "lyzr-nodes-base.httpRequest", "typeVersion": 4,
+  "parameters": { "url": "https://api.x.com/posts", "method": "POST",
+    "jsonBody": "={{ $json.json_body }}", "sendBody": true, "contentType": "json", "responseFormat": "json" } }
+```
+Add `settings: { retryOnFail: true, backoff: "exponential" }` for resilience on real endpoints.
+
 ### Switch (routing) — `lyzr-nodes-base.switch`
-One output branch per rule; wire each branch in `connections.<Switch>.main[i]`.
+One output branch per rule; wire each branch in `connections.<Switch>.main[i]` (rule 0 → `main[0]`).
 ```json
 { "name": "Route", "type": "lyzr-nodes-base.switch",
   "parameters": { "rules": { "rules": [
@@ -75,12 +84,63 @@ One output branch per rule; wire each branch in `connections.<Switch>.main[i]`.
         "operation": "equals", "rightType": "string", "rightValue": "support" } ] } }
   ] } } }
 ```
-
-### Code — `lyzr-nodes-base.code`
+**`typeVersion: 3`** wraps the operator in an object and allows `combineOperation` (and/or) for
+multi-condition rules:
 ```json
-{ "name": "Split Lines", "type": "lyzr-nodes-base.code",
-  "parameters": { "jsCode": "$json.texts.split('\\n').filter(Boolean).map(text => ({ json: { text } }));" } }
+{ "name": "Filing Router", "type": "lyzr-nodes-base.switch", "typeVersion": 3,
+  "parameters": { "rules": { "rules": [
+    { "conditions": { "conditions": [ { "leftType": "string", "leftValue": "={{ $json.filing_route }}",
+        "operator": { "operation": "equals" }, "rightType": "string", "rightValue": "use_and_file" } ],
+      "combineOperation": "and" } }
+  ] } } }
 ```
+
+### Code — `lyzr-nodes-base.code`  (`typeVersion: 2`)
+```json
+{ "name": "Assess", "type": "lyzr-nodes-base.code", "typeVersion": 2,
+  "parameters": { "jsCode": "const p = $input.first() || {};\n[Object.assign({}, p, { margin_pct: 12 })]" } }
+```
+- **An item's json IS the object directly.** `$input.first()` returns the first input object (you
+  read `p.product_type`, not `p.json.product_type`); `$input.all()` returns the array of all input
+  objects. End the script with a **bare array-of-objects expression** (`[ {...} ]`) — that array is
+  the node's output; no `return` needed.
+- **Carry the payload forward** with `Object.assign({}, p, { ...new fields })` so downstream nodes
+  still have the original fields. Don't emit only your new fields and rely on a later node to
+  reassemble — that's what forces the marker-flag anti-pattern (see Design lessons).
+- ⚠️ **`lyzr.llm` nodes pass their input THROUGH and add an `output` field.** After an LLM node,
+  `$json` has *both* the upstream fields *and* `output: {...}` (the parsed `responseFormat`). So a
+  downstream code node can read `p.output.memo` *and* still see `p.product_code`. Use this instead of
+  re-threading data around the LLM.
+
+### Merge (join parallel branches) — `lyzr-nodes-base.merge`
+```json
+{ "name": "Merge Assessments", "type": "lyzr-nodes-base.merge", "parameters": { "mode": "append" } }
+```
+A merge node has **multiple inputs** — wire each upstream branch to a different input index:
+```json
+"Assess":          { "main": [[{ "node": "Merge Assessments", "type": "main", "index": 0 }]] },
+"Product Summary": { "main": [[{ "node": "Merge Assessments", "type": "main", "index": 1 }]] }
+```
+`mode: "append"` concatenates the inputs into one item list. Its real value is as a **barrier**: the
+merge only fires once *all* its inputs have arrived, so it synchronizes parallel branches before a
+downstream node. After it, read each branch by an **intrinsic field** (`items.find(i => i.output)`
+for the LLM branch, `items.find(i => i.margin_pct !== undefined)` for the priced branch) — **never**
+tag items with marker flags just to find them again (see Design lessons).
+
+### Wait for human approval — `lyzr-nodes-base.waitForApproval`
+Durable human-in-the-loop pause. **Two outputs:** `main[0]` = approved, `main[1]` = rejected.
+```json
+{ "name": "Actuary Sign-Off", "type": "lyzr-nodes-base.waitForApproval", "typeVersion": 1,
+  "parameters": {
+    "subject": "Actuary sign-off: {{ $('Filing Verdict').json.product_code }}",
+    "message": "Product {{ $('Filing Verdict').json.product_name }} needs sign-off. Margin: {{ $('Filing Verdict').json.margin_pct }}%.",
+    "formSchema": [
+      { "name": "actuary_remarks", "type": "string", "label": "Actuary remarks", "requiredOn": "approve" },
+      { "name": "rework_note",     "type": "string", "label": "Rework note",     "requiredOn": "reject" } ] } }
+```
+The submitted form fields (e.g. `actuary_remarks`) are added to the item passed down the approve/reject
+branch. Reference upstream fields in `message`/`subject` via `$('Node').json.<field>` (the immediate
+`$json` may just be the prior LLM's `{output, ...}`).
 
 ### Loop — `lyzr-nodes-base.splitInBatches`
 `{ "mode": "each", "batchSize": 1 }`. Two outputs: `main[0]` = loop body, `main[1]` = done.
@@ -195,6 +255,14 @@ Each branch ends in its own `noOp` Output. It exercises most of the node catalog
 (free-text), `responseFormat`, `switch` (4-way), `httpRequest` (templated URLs + retry/backoff
 `settings`), and `taskDecomposition`. Build new flows by composing these same nodes.
 
+`examples/temp-example-simple-order-automation/superflow-insurance-filing.json` — a second demo (an
+insurance product-filing flow) that exercises the **merge / waitForApproval / switch-v3 / httpRequest-POST**
+nodes and embodies the Design lessons: a deterministic `code` branch runs in parallel with an
+`lyzr.llm` summary, they **merge** as a barrier, a `code` "Filing Verdict" disambiguates them by
+intrinsic field (no marker flags) and routes via `switch` to launch / file-with-approval / rework —
+the file route pausing on a `waitForApproval` actuary sign-off. It's the cleaned-up rewrite of a
+real user flow.
+
 ## Design lessons (baked into the example)
 - **Route multi-option questions to `compare`.** "Which of X/Y/Z is safest / what should I invest
   in" must capture ALL coins (a comma-separated `coin_ids`) and route to compare/recommend — a
@@ -219,6 +287,22 @@ Each branch ends in its own `noOp` Output. It exercises most of the node catalog
 - **LLM-node prompt can mix literals + multiple expressions.** `prompt` accepts one `=`-expression
   that interpolates several `{{ }}` from different upstream nodes into a sentence, e.g.
   `=SKU {{ $('Trigger').json.sku }} is short by {{ $('Check Inventory').json.body.shortfall }}; history avg {{ $('Get History').json.body.stats.avg_qty }}.`
+- **Merge to synchronize, then read by intrinsic field — never tag items with marker flags.** The
+  anti-pattern: a code node adds `marker_pricing: true` only so a later node can
+  `$input.all().find(i => i.marker_pricing)`. Instead, carry the real payload forward and
+  disambiguate merged branches by a field that's *naturally* unique to each (`output` for an LLM
+  branch, `margin_pct` for a priced branch). Code nodes should compute real values, not stamp
+  identity tags.
+- **Only parallelize what's slow.** Splitting two instant synchronous `code` checks into separate
+  branches just to `merge` them back adds nodes and a join for no benefit — do them in one node.
+  Reserve the parallel-branch + `merge` pattern for a genuinely concurrent cost, e.g. running an
+  `lyzr.llm` summary alongside the deterministic checks, then merging the two before the next step.
+- **Drive config from the Trigger, not a hardcoded edit line.** A `code` node with
+  `const SCENARIO = '...' // EDIT THIS LINE` forces a code change per run. Put the choice in the
+  Trigger `inputSchema` and read `$json.scenario` — same flow, no editing.
+- **`typeVersion` matters.** Real exports pin it per node (trigger 1, code 2, llm 1, switch 3,
+  httpRequest 4). Match the version whose parameter shape you're using — switch v3's
+  `operator:{operation}` differs from older flat `operation`.
 
 ## Durability story (for the pitch; doc-derived)
 SuperFlow's differentiator is durable, exactly-once execution: steps are journaled, completed steps

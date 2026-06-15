@@ -32,6 +32,37 @@
       "outcome": "success",
       "ended_at": "2026-06-15T03:12:22.373Z",
       "skill_used": "order-fulfillment"
+    },
+    {
+      "id": "bfa0e7ac-7eb4-4b42-81fb-0bda36432712",
+      "objective": "Fulfill order: SKU=GIZMO-003, qty=20, customer=acme",
+      "steps": [
+        {
+          "description": "Inventory check: GIZMO-003 has 12 units, need 20, shortfall=8. sufficient=no → must restock.",
+          "timestamp": "2026-06-15T03:55:39.394Z"
+        },
+        {
+          "description": "Restocked 92 units (shortfall 8 + 3×avg28=84). Placed order ord_85fa5c46 for 20 units, delivery 2026-06-20.",
+          "timestamp": "2026-06-15T03:55:56.575Z"
+        }
+      ],
+      "attempts": 1,
+      "status": "succeeded",
+      "started_at": "2026-06-15T03:55:32.922Z",
+      "outcome": "success",
+      "ended_at": "2026-06-15T03:55:59.006Z",
+      "skill_used": "order-fulfillment"
+    },
+    {
+      "id": "ebac1272-c08b-4e1d-b076-25d53332ec10",
+      "objective": "Fulfill order: SKU=GIZMO-003, qty=200, customer=acme",
+      "steps": [],
+      "attempts": 1,
+      "status": "succeeded",
+      "started_at": "2026-06-15T03:56:27.324Z",
+      "outcome": "success",
+      "ended_at": "2026-06-15T03:56:38.564Z",
+      "skill_used": "order-fulfillment"
     }
   ]
 }

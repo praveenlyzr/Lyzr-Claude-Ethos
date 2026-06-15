@@ -2,8 +2,8 @@
 name: order-fulfillment
 description: Fulfill a customer order against the live inventory API — check stock, and when short, reason over order history to decide the reorder amount, restock, place the order, and set the delivery date. Use for any order/inventory/restock/reset request.
 confidence: 1
-usage_count: 3
-success_count: 3
+usage_count: 5
+success_count: 5
 failure_count: 0
 negative_examples: []
 ---

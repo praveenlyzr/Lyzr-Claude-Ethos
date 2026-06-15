@@ -1,0 +1,294 @@
+{
+  "name": "Insuring a Product (clean)",
+  "nodes": [
+    {
+      "id": "trigger",
+      "name": "Trigger",
+      "type": "lyzr-nodes-base.trigger",
+      "typeVersion": 1,
+      "parameters": {
+        "inputSchema": [
+          { "name": "scenario", "type": "string", "required": true, "description": "Which demo spec to file: use_and_file | file_and_use | rework" }
+        ]
+      },
+      "position": [-260, 300]
+    },
+
+    {
+      "id": "product-spec-intake",
+      "name": "Product Spec Intake",
+      "type": "lyzr-nodes-base.code",
+      "typeVersion": 2,
+      "parameters": {
+        "jsCode": "// Build the product spec from the Trigger input (no hardcoded 'edit this line').\nconst scenario = ($json.scenario || 'use_and_file');\nconst base = {\n  product_code: 'PRD-2026-T18', product_name: 'iSecure Term Shield',\n  category: 'pre_approved', product_type: 'term', lock_in_years: 0,\n  charge_spread_ok: true, nav_disclosure_daily: true,\n  premium_band_inr: [12000, 90000], riders: ['accidental_death', 'critical_illness'],\n  target_segment: 'salaried_25_45'\n};\nconst variants = {\n  use_and_file: {},\n  file_and_use: { product_code: 'PRD-2026-U07', product_name: 'WealthMax ULIP Edge', category: 'new_category', product_type: 'ulip', lock_in_years: 5 },\n  rework: { product_code: 'PRD-2026-U08', product_name: 'QuickGain ULIP', category: 'new_category', product_type: 'ulip', lock_in_years: 3, charge_spread_ok: false }\n};\n[Object.assign({}, base, variants[scenario] || {}, { scenario })]"
+      },
+      "position": [-30, 300]
+    },
+
+    {
+      "id": "ulip-rule-checks",
+      "name": "ULIP Rule Checks",
+      "type": "lyzr-nodes-base.code",
+      "typeVersion": 2,
+      "parameters": {
+        "jsCode": "// Real work: derive rule_violations and carry the whole spec forward.\nconst p = $input.first() || {};\nconst violations = [];\nif (p.product_type === 'ulip' && (p.lock_in_years || 0) < 5) violations.push('ULIP lock-in below mandatory 5 years');\nif (p.charge_spread_ok === false) violations.push('Charges not spread evenly across lock-in (IRDAI ULIP norms)');\nif (p.product_type === 'ulip' && p.nav_disclosure_daily === false) violations.push('Daily NAV disclosure missing');\n[Object.assign({}, p, { rule_violations: violations })]"
+      },
+      "position": [200, 300]
+    },
+
+    {
+      "id": "assess",
+      "name": "Assess Pricing & Compliance",
+      "type": "lyzr-nodes-base.code",
+      "typeVersion": 2,
+      "parameters": {
+        "jsCode": "// Two trivial synchronous checks belong in ONE node — no artificial split + merge.\n// Carries the spec forward so no downstream 'marker' flags are needed to re-identify it.\nconst p = $input.first() || {};\nconst pricing = { mortality_table: 'IALM 2012-14', margin_pct: 12, margin_ok: true,\n  sample_annual_premium_inr: p.product_type === 'term' ? 14500 : 96000 };\nconst compliance = { mandatory_clauses_ok: true, benefit_illustration_ok: true, grievance_clause_ok: true };\n[Object.assign({}, p, pricing, { compliance })]"
+      },
+      "position": [440, 200]
+    },
+
+    {
+      "id": "product-summary",
+      "name": "Product Summary",
+      "type": "lyzr-nodes-base.lyzr.llm",
+      "typeVersion": 1,
+      "parameters": {
+        "model": "gpt-4o",
+        "provider": "openai",
+        "prompt": "Summarise this product spec: {{ JSON.stringify($json) }}",
+        "maxTokens": 1200,
+        "temperature": 0.2,
+        "systemPrompt": "You are a product-actuarial assistant. Summarise this life-insurance product spec for the filing committee.",
+        "responseFormat": { "type": "json_schema", "json_schema": { "name": "product_summary", "strict": true, "schema": { "type": "object", "required": ["summary", "key_risks"], "properties": { "summary": { "type": "string" }, "key_risks": { "type": "array", "items": { "type": "string" } } }, "additionalProperties": false } } }
+      },
+      "settings": { "retryOnFail": true, "backoff": "exponential" },
+      "position": [440, 420]
+    },
+
+    {
+      "id": "merge-assessments",
+      "name": "Merge Assessments",
+      "type": "lyzr-nodes-base.merge",
+      "parameters": { "mode": "append" },
+      "position": [700, 300]
+    },
+
+    {
+      "id": "filing-verdict",
+      "name": "Filing Verdict",
+      "type": "lyzr-nodes-base.code",
+      "typeVersion": 2,
+      "parameters": {
+        "jsCode": "// Combine the two merged branches by INTRINSIC fields (no marker flags):\n//   - the deterministic branch is the item that has margin_pct (from Assess)\n//   - the LLM branch is the item that has `output` (from Product Summary)\nconst items = $input.all();\nconst spec = items.find(i => i && i.margin_pct !== undefined) || {};\nconst sum = items.find(i => i && i.output) || {};\nconst summary = sum.output || {};\nconst route = (spec.rule_violations || []).length ? 'rework'\n  : (spec.category === 'pre_approved' ? 'use_and_file' : 'file_and_use');\n[{\n  product_code: spec.product_code, product_name: spec.product_name,\n  category: spec.category, product_type: spec.product_type,\n  rule_violations: spec.rule_violations || [],\n  filing_route: route,\n  margin_pct: spec.margin_pct,\n  sample_annual_premium_inr: spec.sample_annual_premium_inr,\n  checklist_ok: !!(spec.compliance && spec.compliance.mandatory_clauses_ok),\n  product_summary: summary.summary || '',\n  key_risks: summary.key_risks || []\n}]"
+      },
+      "position": [920, 300]
+    },
+
+    {
+      "id": "filing-router",
+      "name": "Filing Router",
+      "type": "lyzr-nodes-base.switch",
+      "typeVersion": 3,
+      "parameters": {
+        "rules": {
+          "rules": [
+            { "conditions": { "conditions": [ { "leftType": "string", "leftValue": "={{ $json.filing_route }}", "operator": { "operation": "equals" }, "rightType": "string", "rightValue": "use_and_file" } ], "combineOperation": "and" } },
+            { "conditions": { "conditions": [ { "leftType": "string", "leftValue": "={{ $json.filing_route }}", "operator": { "operation": "equals" }, "rightType": "string", "rightValue": "file_and_use" } ], "combineOperation": "and" } },
+            { "conditions": { "conditions": [ { "leftType": "string", "leftValue": "={{ $json.filing_route }}", "operator": { "operation": "equals" }, "rightType": "string", "rightValue": "rework" } ], "combineOperation": "and" } }
+          ]
+        }
+      },
+      "position": [1140, 300]
+    },
+
+    {
+      "id": "build-launch",
+      "name": "Build Launch",
+      "type": "lyzr-nodes-base.code",
+      "typeVersion": 2,
+      "parameters": {
+        "jsCode": "const p = $input.first() || {};\nconst packet = Object.assign({}, p, { action: 'launch_product', disposition: 'launched_use_and_file' });\n[{ json_body: JSON.stringify(packet) }]"
+      },
+      "position": [1380, 80]
+    },
+    {
+      "id": "launch-product",
+      "name": "Launch Product",
+      "type": "lyzr-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "parameters": {
+        "url": "https://jsonplaceholder.typicode.com/posts",
+        "method": "POST",
+        "jsonBody": "={{ $json.json_body }}",
+        "sendBody": true,
+        "contentType": "json",
+        "responseFormat": "json"
+      },
+      "settings": { "retryOnFail": true, "backoff": "exponential" },
+      "position": [1600, 80]
+    },
+    {
+      "id": "build-regulator-filing",
+      "name": "Build Regulator Filing",
+      "type": "lyzr-nodes-base.code",
+      "typeVersion": 2,
+      "parameters": {
+        "jsCode": "const r = $input.first() || {};\nconst p = r.body || {};\nconst packet = Object.assign({}, p, { action: 'post_launch_filing', launch_ref: 'LNCH-' + (p.id || 101) });\n[{ json_body: JSON.stringify(packet) }]"
+      },
+      "position": [1820, 80]
+    },
+    {
+      "id": "file-with-irdai",
+      "name": "File With IRDAI",
+      "type": "lyzr-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "parameters": {
+        "url": "https://jsonplaceholder.typicode.com/posts",
+        "method": "POST",
+        "jsonBody": "={{ $json.json_body }}",
+        "sendBody": true,
+        "contentType": "json",
+        "responseFormat": "json"
+      },
+      "settings": { "retryOnFail": true, "backoff": "exponential" },
+      "position": [2040, 80]
+    },
+    {
+      "id": "product-live",
+      "name": "Product Live",
+      "type": "lyzr-nodes-base.code",
+      "typeVersion": 2,
+      "parameters": {
+        "jsCode": "const r = $input.first() || {};\nconst p = r.body || {};\n[{ product_code: p.product_code, product_name: p.product_name, disposition: 'live_use_and_file',\n   launch_ref: p.launch_ref, irdai_filing_ref: 'UF-' + (p.id || 101), live_at: new Date().toISOString() }]"
+      },
+      "position": [2260, 80]
+    },
+
+    {
+      "id": "filing-memo",
+      "name": "Filing Memo",
+      "type": "lyzr-nodes-base.lyzr.llm",
+      "typeVersion": 1,
+      "parameters": {
+        "model": "gpt-4o",
+        "provider": "openai",
+        "prompt": "Draft the File & Use memo: {{ JSON.stringify($json) }}",
+        "maxTokens": 1200,
+        "temperature": 0.2,
+        "systemPrompt": "You are drafting a File & Use submission memo to IRDAI for a new-category product.",
+        "responseFormat": { "type": "json_schema", "json_schema": { "name": "filing_memo", "strict": true, "schema": { "type": "object", "required": ["memo"], "properties": { "memo": { "type": "string" } }, "additionalProperties": false } } }
+      },
+      "settings": { "retryOnFail": true, "backoff": "exponential" },
+      "position": [1380, 320]
+    },
+    {
+      "id": "actuary-sign-off",
+      "name": "Actuary Sign-Off",
+      "type": "lyzr-nodes-base.waitForApproval",
+      "typeVersion": 1,
+      "parameters": {
+        "message": "Product {{ $('Filing Verdict').json.product_name }} ({{ $('Filing Verdict').json.filing_route }}) requires appointed-actuary sign-off before IRDAI filing. Margin: {{ $('Filing Verdict').json.margin_pct }}%.",
+        "subject": "Actuary sign-off: {{ $('Filing Verdict').json.product_code }}",
+        "formSchema": [
+          { "name": "actuary_remarks", "type": "string", "label": "Actuary remarks", "requiredOn": "approve" },
+          { "name": "rework_note", "type": "string", "label": "Rework note", "requiredOn": "reject" }
+        ]
+      },
+      "position": [1600, 320]
+    },
+    {
+      "id": "build-submission",
+      "name": "Build Submission",
+      "type": "lyzr-nodes-base.code",
+      "typeVersion": 2,
+      "parameters": {
+        "jsCode": "// lyzr.llm passes input through and adds `output`, so the memo + the verdict fields\n// are both on this item. Strip the transient `output` cleanly instead of setting it undefined.\nconst p = $input.first() || {};\nconst memo = (p.output || {}).memo || '';\nconst packet = Object.assign({}, p, { action: 'file_and_use_submission', filing_memo: memo, actuary_remarks: p.actuary_remarks || '' });\ndelete packet.output;\n[{ json_body: JSON.stringify(packet) }]"
+      },
+      "position": [1820, 240]
+    },
+    {
+      "id": "submit-filing",
+      "name": "Submit Filing",
+      "type": "lyzr-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "parameters": {
+        "url": "https://jsonplaceholder.typicode.com/posts",
+        "method": "POST",
+        "jsonBody": "={{ $json.json_body }}",
+        "sendBody": true,
+        "contentType": "json",
+        "responseFormat": "json"
+      },
+      "settings": { "retryOnFail": true, "backoff": "exponential" },
+      "position": [2040, 240]
+    },
+    {
+      "id": "filed-awaiting-approval",
+      "name": "Filed Awaiting Approval",
+      "type": "lyzr-nodes-base.code",
+      "typeVersion": 2,
+      "parameters": {
+        "jsCode": "const r = $input.first() || {};\nconst p = r.body || {};\n[{ product_code: p.product_code, product_name: p.product_name, disposition: 'filed_awaiting_irdai',\n   filing_ref: 'FU-' + (p.id || 101), filed_at: new Date().toISOString() }]"
+      },
+      "position": [2260, 240]
+    },
+
+    {
+      "id": "rework-notice",
+      "name": "Rework Notice",
+      "type": "lyzr-nodes-base.lyzr.llm",
+      "typeVersion": 1,
+      "parameters": {
+        "model": "gpt-4o",
+        "provider": "openai",
+        "prompt": "Notify the product team of the rework reasons: {{ JSON.stringify($json) }}",
+        "maxTokens": 1200,
+        "temperature": 0.2,
+        "systemPrompt": "You are notifying the product team that their product filing was returned. Cite the rule violations if any are present; otherwise cite the appointed actuary's rework note. Be specific and constructive.",
+        "responseFormat": { "type": "json_schema", "json_schema": { "name": "rework_notice", "strict": true, "schema": { "type": "object", "required": ["notice"], "properties": { "notice": { "type": "string" } }, "additionalProperties": false } } }
+      },
+      "settings": { "retryOnFail": true, "backoff": "exponential" },
+      "position": [1380, 560]
+    },
+    {
+      "id": "returned-to-product-team",
+      "name": "Returned To Product Team",
+      "type": "lyzr-nodes-base.code",
+      "typeVersion": 2,
+      "parameters": {
+        "jsCode": "const p = $input.first() || {};\nconst notice = (p.output || {}).notice || '';\nconst reason = (p.rule_violations || []).length ? p.rule_violations.join('; ')\n  : (p.rework_note || 'Returned by appointed actuary');\n[{ product_code: p.product_code, product_name: p.product_name, disposition: 'returned_for_rework',\n   rework_reason: reason, rework_notice: notice, returned_at: new Date().toISOString() }]"
+      },
+      "position": [1600, 560]
+    }
+  ],
+
+  "connections": {
+    "Trigger": { "main": [[{ "node": "Product Spec Intake", "type": "main", "index": 0 }]] },
+    "Product Spec Intake": { "main": [[{ "node": "ULIP Rule Checks", "type": "main", "index": 0 }]] },
+    "ULIP Rule Checks": { "main": [[
+      { "node": "Assess Pricing & Compliance", "type": "main", "index": 0 },
+      { "node": "Product Summary", "type": "main", "index": 0 }
+    ]] },
+    "Assess Pricing & Compliance": { "main": [[{ "node": "Merge Assessments", "type": "main", "index": 0 }]] },
+    "Product Summary": { "main": [[{ "node": "Merge Assessments", "type": "main", "index": 1 }]] },
+    "Merge Assessments": { "main": [[{ "node": "Filing Verdict", "type": "main", "index": 0 }]] },
+    "Filing Verdict": { "main": [[{ "node": "Filing Router", "type": "main", "index": 0 }]] },
+    "Filing Router": { "main": [
+      [{ "node": "Build Launch", "type": "main", "index": 0 }],
+      [{ "node": "Filing Memo", "type": "main", "index": 0 }],
+      [{ "node": "Rework Notice", "type": "main", "index": 0 }]
+    ] },
+    "Build Launch": { "main": [[{ "node": "Launch Product", "type": "main", "index": 0 }]] },
+    "Launch Product": { "main": [[{ "node": "Build Regulator Filing", "type": "main", "index": 0 }]] },
+    "Build Regulator Filing": { "main": [[{ "node": "File With IRDAI", "type": "main", "index": 0 }]] },
+    "File With IRDAI": { "main": [[{ "node": "Product Live", "type": "main", "index": 0 }]] },
+    "Filing Memo": { "main": [[{ "node": "Actuary Sign-Off", "type": "main", "index": 0 }]] },
+    "Actuary Sign-Off": { "main": [
+      [{ "node": "Build Submission", "type": "main", "index": 0 }],
+      [{ "node": "Rework Notice", "type": "main", "index": 0 }]
+    ] },
+    "Build Submission": { "main": [[{ "node": "Submit Filing", "type": "main", "index": 0 }]] },
+    "Submit Filing": { "main": [[{ "node": "Filed Awaiting Approval", "type": "main", "index": 0 }]] },
+    "Rework Notice": { "main": [[{ "node": "Returned To Product Team", "type": "main", "index": 0 }]] }
+  }
+}
