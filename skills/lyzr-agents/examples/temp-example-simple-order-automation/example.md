@@ -14,8 +14,19 @@ Seeded SKUs (reset every `deploy.sh` run):
 | `GADGET-002` | 3     | Low stock → in stock up to qty 3      |
 | `GIZMO-003`  | 0     | Empty → forces a **restock**, ships in **5 days** |
 
-> Stock is mutable — orders decrement it. Re-run `bash infra/deploy.sh customagents` to reseed
-> to the table above.
+> Stock is mutable — orders decrement it and restock adds to it. The **restock branch only fires
+> when `qty > current stock`.** So after one out-of-stock run, GIZMO-003 has been restocked and a
+> second small order won't be short. To re-trigger the restock path, either order a larger `qty`
+> (e.g. `100`) or reset the stock.
+>
+> **Reset to the canonical state above** (needs the `customagents` AWS profile):
+> ```bash
+> T=temp-example-simple-order-automation-inventory
+> aws dynamodb put-item --profile customagents --region us-east-1 --table-name $T --item '{"sku":{"S":"WIDGET-001"},"quantity":{"N":"50"}}'
+> aws dynamodb put-item --profile customagents --region us-east-1 --table-name $T --item '{"sku":{"S":"GADGET-002"},"quantity":{"N":"3"}}'
+> aws dynamodb put-item --profile customagents --region us-east-1 --table-name $T --item '{"sku":{"S":"GIZMO-003"},"quantity":{"N":"0"}}'
+> ```
+> (`bash infra/deploy.sh customagents` also reseeds, but does a full redeploy.)
 
 ---
 
