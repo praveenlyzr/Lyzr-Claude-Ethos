@@ -1,0 +1,5 @@
+[
+  { "sku": "WIDGET-001", "quantity": 50 },
+  { "sku": "GADGET-002", "quantity": 3 },
+  { "sku": "GIZMO-003", "quantity": 0 }
+]
