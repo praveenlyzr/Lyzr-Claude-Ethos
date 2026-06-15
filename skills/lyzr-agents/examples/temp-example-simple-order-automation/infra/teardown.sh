@@ -8,7 +8,7 @@ export AWS_PROFILE="$PROFILE" AWS_DEFAULT_REGION="$REGION"
 API_ID="$(aws apigatewayv2 get-apis --query "Items[?Name=='${PREFIX}-api'].ApiId | [0]" --output text 2>/dev/null)"
 [ -n "$API_ID" ] && [ "$API_ID" != "None" ] && { aws apigatewayv2 delete-api --api-id "$API_ID" && echo "deleted api $API_ID"; }
 
-for s in inventory restock orders; do
+for s in inventory restock orders reset history; do
   aws lambda delete-function --function-name "$PREFIX-$s" 2>/dev/null && echo "deleted lambda $PREFIX-$s" || true
 done
 

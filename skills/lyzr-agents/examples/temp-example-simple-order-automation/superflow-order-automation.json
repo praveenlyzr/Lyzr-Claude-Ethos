@@ -12,7 +12,7 @@
           { "name": "customer", "type": "string", "required": true, "description": "Customer name, e.g. acme" }
         ]
       },
-      "position": [80, 320]
+      "position": [80, 360]
     },
     {
       "id": "node_check",
@@ -24,7 +24,7 @@
         "sendHeaders": false
       },
       "settings": { "retryOnFail": true, "backoff": "exponential" },
-      "position": [340, 320]
+      "position": [320, 360]
     },
     {
       "id": "node_route",
@@ -38,8 +38,9 @@
           ]
         }
       },
-      "position": [600, 320]
+      "position": [560, 360]
     },
+
     {
       "id": "node_order_direct",
       "name": "Place Order",
@@ -50,26 +51,70 @@
         "sendHeaders": false
       },
       "settings": { "retryOnFail": true, "backoff": "exponential" },
-      "position": [880, 180]
+      "position": [840, 180]
     },
     {
       "id": "node_out_direct",
       "name": "Order Placed",
       "type": "lyzr-nodes-base.noOp",
       "parameters": { "outputField": "output" },
-      "position": [1140, 180]
+      "position": [1100, 180]
+    },
+
+    {
+      "id": "node_history",
+      "name": "Get History",
+      "type": "lyzr-nodes-base.httpRequest",
+      "parameters": {
+        "url": "=https://f50853np0i.execute-api.us-east-1.amazonaws.com/history/{{ $('Trigger').json.sku }}",
+        "method": "GET",
+        "sendHeaders": false
+      },
+      "settings": { "retryOnFail": true, "backoff": "exponential" },
+      "position": [840, 520]
+    },
+    {
+      "id": "node_planner",
+      "name": "Reorder Planner",
+      "type": "lyzr-nodes-base.lyzr.llm",
+      "parameters": {
+        "model": "gpt-4o-mini",
+        "provider": "openai",
+        "maxTokens": 200,
+        "temperature": 0,
+        "systemPrompt": "You are an inventory reorder planner. A SKU is OUT OF STOCK for an incoming order and must be restocked. Decide how many units to reorder NOW.\n\nRules:\n- restock_qty MUST cover the shortfall (the units missing for THIS order).\n- On top of the shortfall, add safety stock for expected near-future demand, reasoned from the order history: a SKU that sells in big or frequent orders needs a deeper buffer; a SKU with little/no history gets a small flat buffer (about 10).\n- A sensible target is: shortfall + a few (roughly 3) typical future orders, where a 'typical' order is the average order size from history. Round to a whole number.\n- Never return less than the shortfall. Keep it reasonable (do not over-order wildly).\n\nReturn restock_qty (integer) and a one-line reason citing the numbers you used.",
+        "prompt": "=SKU {{ $('Trigger').json.sku }} is short by {{ $('Check Inventory').json.body.shortfall }} units for an order of {{ $('Trigger').json.qty }} (current stock {{ $('Check Inventory').json.body.quantity }}). Order history: {{ $('Get History').json.body.stats.orders }} past orders, {{ $('Get History').json.body.stats.total_qty }} units total, average {{ $('Get History').json.body.stats.avg_qty }} per order, largest {{ $('Get History').json.body.stats.max_qty }}. How many units should we reorder now?",
+        "responseFormat": {
+          "type": "json_schema",
+          "json_schema": {
+            "name": "reorder",
+            "strict": true,
+            "schema": {
+              "type": "object",
+              "required": ["restock_qty", "reason"],
+              "properties": {
+                "restock_qty": { "type": "integer", "description": "units to reorder now; >= shortfall" },
+                "reason": { "type": "string", "description": "one-line justification citing shortfall, avg order size, etc." }
+              },
+              "additionalProperties": false
+            }
+          }
+        }
+      },
+      "settings": { "retryOnFail": true, "backoff": "exponential" },
+      "position": [1100, 520]
     },
     {
       "id": "node_restock",
       "name": "Restock",
       "type": "lyzr-nodes-base.httpRequest",
       "parameters": {
-        "url": "=https://f50853np0i.execute-api.us-east-1.amazonaws.com/restock?sku={{ $('Trigger').json.sku }}&qty={{ $('Check Inventory').json.body.restock_qty }}",
+        "url": "=https://f50853np0i.execute-api.us-east-1.amazonaws.com/restock?sku={{ $('Trigger').json.sku }}&qty={{ $('Reorder Planner').json.output.restock_qty }}",
         "method": "POST",
         "sendHeaders": false
       },
       "settings": { "retryOnFail": true, "backoff": "exponential" },
-      "position": [880, 460]
+      "position": [1360, 520]
     },
     {
       "id": "node_order_restock",
@@ -81,14 +126,14 @@
         "sendHeaders": false
       },
       "settings": { "retryOnFail": true, "backoff": "exponential" },
-      "position": [1140, 460]
+      "position": [1620, 520]
     },
     {
       "id": "node_out_restock",
       "name": "Order Placed (restocked)",
       "type": "lyzr-nodes-base.noOp",
       "parameters": { "outputField": "output" },
-      "position": [1400, 460]
+      "position": [1880, 520]
     }
   ],
   "connections": {
@@ -96,9 +141,11 @@
     "Check Inventory": { "main": [[{ "node": "Route", "type": "main", "index": 0 }]] },
     "Route": { "main": [
       [{ "node": "Place Order", "type": "main", "index": 0 }],
-      [{ "node": "Restock", "type": "main", "index": 0 }]
+      [{ "node": "Get History", "type": "main", "index": 0 }]
     ] },
     "Place Order": { "main": [[{ "node": "Order Placed", "type": "main", "index": 0 }]] },
+    "Get History": { "main": [[{ "node": "Reorder Planner", "type": "main", "index": 0 }]] },
+    "Reorder Planner": { "main": [[{ "node": "Restock", "type": "main", "index": 0 }]] },
     "Restock": { "main": [[{ "node": "Place Order (delayed)", "type": "main", "index": 0 }]] },
     "Place Order (delayed)": { "main": [[{ "node": "Order Placed (restocked)", "type": "main", "index": 0 }]] }
   }

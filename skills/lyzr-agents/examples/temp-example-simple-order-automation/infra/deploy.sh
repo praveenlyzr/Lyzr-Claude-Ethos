@@ -58,6 +58,7 @@ deploy_fn inventory inventory.mjs
 deploy_fn restock   restock.mjs
 deploy_fn orders    orders.mjs
 deploy_fn reset     reset.mjs
+deploy_fn history   history.mjs
 
 echo ">> HTTP API"
 API_ID="$(aws apigatewayv2 get-apis --query "Items[?Name=='${PREFIX}-api'].ApiId | [0]" --output text)"
@@ -81,6 +82,7 @@ add_route () {  # method path lambda-suffix  (idempotent: skips if the route alr
   echo "   added route $key -> $fn"
 }
 add_route GET  "/inventory/{sku}" inventory
+add_route GET  "/history/{sku}"   history
 add_route POST "/restock"         restock
 add_route POST "/orders"          orders
 add_route POST "/reset"           reset

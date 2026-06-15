@@ -2,10 +2,10 @@ spec_version: "0.1"
 name: order-fulfillment
 version: "0.1.0"
 description: >
-  Fulfills a customer order against a live inventory: checks stock, restocks when short,
-  places the order, and pushes the delivery date out when a restock was needed.
-  Same flow as the Lyzr SuperFlow next to it — here as a git-native CLI agent that curls
-  real, public, zero-auth AWS endpoints.
+  Fulfills a customer order against a live inventory: checks stock, and when short, REASONS over the
+  order history to decide how much to reorder, restocks, places the order, and pushes the delivery
+  date out when a restock was needed. Same flow as the Lyzr SuperFlow next to it (whose reorder step
+  is an LLM node) — here the agent itself is the AI. Curls real, public, zero-auth AWS endpoints.
 
 model:
   preferred: claude-opus-4-8

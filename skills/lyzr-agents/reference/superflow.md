@@ -208,6 +208,17 @@ Each branch ends in its own `noOp` Output. It exercises most of the node catalog
 - **Data is a pipeline; reasoning is the agent.** SuperFlow agents can't fetch on demand (no working
   agent-owned tools), so put `httpRequest` fetches in the pipeline and let agents reason/route over
   the results.
+- **Put the AI judgement *in* the deterministic flow, not in the backend.** A great demo shape is
+  `Trigger → httpRequest (fetch facts) → switch (deterministic route) → LLM node (decide) →
+  httpRequest (act on the decision)`. Keep the backend "dumb" (serve data + atomic ops, return only
+  deterministic fields like `sufficient`/`shortfall`); expose the raw signal (e.g. `GET /history`)
+  and let an `lyzr.llm` node with a `responseFormat` json_schema choose the number/branch. Downstream
+  HTTP nodes then template the AI's output: `qty={{ $('Reorder Planner').json.output.restock_qty }}`.
+  This visibly contrasts AI reasoning against deterministic plumbing — and the same reasoning can be
+  done by a gitagent when the orchestrator itself is the AI. (See the order-automation example.)
+- **LLM-node prompt can mix literals + multiple expressions.** `prompt` accepts one `=`-expression
+  that interpolates several `{{ }}` from different upstream nodes into a sentence, e.g.
+  `=SKU {{ $('Trigger').json.sku }} is short by {{ $('Check Inventory').json.body.shortfall }}; history avg {{ $('Get History').json.body.stats.avg_qty }}.`
 
 ## Durability story (for the pitch; doc-derived)
 SuperFlow's differentiator is durable, exactly-once execution: steps are journaled, completed steps

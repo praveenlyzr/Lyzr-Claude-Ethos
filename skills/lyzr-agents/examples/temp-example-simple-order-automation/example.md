@@ -30,22 +30,32 @@ Seeded SKUs (reset every `deploy.sh` run):
 
 ## 1) SuperFlow (`superflow-order-automation.json`)
 
+Nodes: **Trigger → Check Inventory (HTTP) → Route (Switch)** then either
+- **yes:** Place Order (HTTP, `delay_days=2`) → Order Placed, or
+- **no:** Get History (HTTP) → **Reorder Planner (LLM)** → Restock (HTTP) → Place Order (HTTP, `delay_days=5`) → Order Placed.
+
+The **Reorder Planner is an LLM node** sitting in the middle of the deterministic pipeline — it reads
+the order history and decides `restock_qty` (with a `reason`); the Restock step uses that AI number.
+
 Import into Lyzr Studio → SuperFlow, then **Run** with this trigger input:
 
-**Scenario A — in stock (no restock):**
+**Scenario A — in stock (no restock, no AI):**
 ```json
 { "sku": "WIDGET-001", "qty": "2", "customer": "acme" }
 ```
 Expected: Route → `sufficient:"yes"` → Place Order (`delay_days=2`) → `201`, delivery ≈ today+2.
 
-**Scenario B — out of stock (restock first):**
+**Scenario B — out of stock (AI decides the reorder):**
 ```json
 { "sku": "GIZMO-003", "qty": "5", "customer": "acme" }
 ```
-Expected: Route → `sufficient:"no"`, `restock_qty:15` → Restock 15 → Place Order (`delay_days=5`)
-→ `201`, delivery ≈ today+5.
+Expected: Route → `sufficient:"no"` → Get History → **Reorder Planner picks `restock_qty`** →
+Restock → Place Order (`delay_days=5`) → `201`, delivery ≈ today+5. With no history the AI will
+choose roughly `shortfall + ~10`; after you've placed several orders it reorders deeper.
 
 > All three trigger fields are strings (they're interpolated straight into the request URLs).
+> The Reorder Planner uses `gpt-4o-mini` / OpenAI with a strict JSON `responseFormat` — same node
+> type as the crypto-copilot example's Classifier.
 
 ---
 
@@ -64,9 +74,10 @@ Place an order for customer acme: 2 units of WIDGET-001.
 Customer acme wants to order 5 of GIZMO-003.
 ```
 
-The agent will: check inventory (`?want=`), branch on `sufficient`, restock by `restock_qty` if
-needed, place the order with the right `delay_days`, and report the `order_id` + delivery date.
-`API_BASE` comes from `agent.yaml`'s `env`.
+The agent will: check inventory (`?want=`), branch on `sufficient`, and when short **fetch
+`/history` and reason about how much to reorder itself** (the gitagent *is* the AI, so the planning
+lives in the agent, not the backend), restock by that amount, place the order with the right
+`delay_days`, and report the `order_id` + delivery date. `API_BASE` comes from `agent.yaml`'s `env`.
 
 ---
 
@@ -79,9 +90,10 @@ B="https://f50853np0i.execute-api.us-east-1.amazonaws.com"
 curl -s "$B/inventory/WIDGET-001?want=2"                                   # sufficient:"yes"
 curl -s -X POST "$B/orders?sku=WIDGET-001&qty=2&customer=acme&delay_days=2"
 
-# --- Scenario B: out of stock ---
-curl -s "$B/inventory/GIZMO-003?want=5"                                    # sufficient:"no", restock_qty:15
-curl -s -X POST "$B/restock?sku=GIZMO-003&qty=15"
+# --- Scenario B: out of stock (the SuperFlow/gitagent put an AI step between these calls) ---
+curl -s "$B/inventory/GIZMO-003?want=5"                                    # sufficient:"no", shortfall:5
+curl -s "$B/history/GIZMO-003"                                             # data the AI reasons over
+curl -s -X POST "$B/restock?sku=GIZMO-003&qty=15"                          # qty here is the AI's decision
 curl -s -X POST "$B/orders?sku=GIZMO-003&qty=5&customer=acme&delay_days=5"
 ```
 
@@ -92,29 +104,29 @@ curl -s -X POST "$B/orders" -d '{"sku":"WIDGET-001","qty":2,"customer":"acme","d
 
 ---
 
-## Smart History (dynamic reorder) — how to see it
+## Smart History (AI logic in the middle) — how to see it
 
-When stock is short, `restock_qty` is **sized from this SKU's order history**, not a flat number:
+The reorder quantity is **not** computed by the backend. When stock is short, the orchestration
+fetches `/history/{sku}` and an **AI step decides** how much to reorder:
+- In the **SuperFlow**, that's the `Reorder Planner` **LLM node** (output `restock_qty` + `reason`).
+- In the **gitagent**, the agent itself reasons over the history.
 
-```
-restock_qty = shortfall + max(10, avg_order_qty × 3)
-```
+Its rule of thumb: cover the shortfall plus enough safety stock for expected near-future demand
+(≈ `shortfall + 3 × average order size`), falling back to a small flat buffer (~10) when there's
+little history. Because it's an LLM, the exact number can vary — read the `reason` it returns.
 
-- **No history** → `avg_order_qty = 0` → buffer falls back to `10` (e.g. shortfall 5 → `restock_qty 15`).
-- **With history** → buffer scales with demand, so busy SKUs restock deeper.
-
-Demo it:
+See the data the AI works with, and how it changes as history grows:
 ```bash
 B="https://f50853np0i.execute-api.us-east-1.amazonaws.com"
 curl -s -X POST "$B/reset"                                          # clean slate
-curl -s "$B/inventory/GIZMO-003?want=5"                             # restock_qty:15, buffer:10, history.orders:0
-curl -s -X POST "$B/restock?sku=GIZMO-003&qty=30" >/dev/null
+curl -s "$B/history/GIZMO-003"                                      # stats.orders:0 -> AI picks a small buffer
+curl -s -X POST "$B/restock?sku=GIZMO-003&qty=40" >/dev/null
 for i in 1 2 3; do curl -s -X POST "$B/orders?sku=GIZMO-003&qty=8&customer=acme&delay_days=2" >/dev/null; done
-curl -s "$B/inventory/GIZMO-003?want=10"                            # buffer:24 (avg 8 × 3), restock_qty:28, history.avg_qty:8
+curl -s "$B/history/GIZMO-003"                                      # stats.avg_qty:8 -> AI reorders deeper
 ```
 
-The SuperFlow and gitagent need **no change** to benefit — the Restock step already uses
-`restock_qty` from the inventory check, which is now the smart value.
+Then run the **out-of-stock SuperFlow scenario** above and watch the `Reorder Planner` node's output
+(`restock_qty`, `reason`) drive the Restock step.
 
 ---
 
@@ -139,11 +151,21 @@ before a fresh demo, or whenever Smart History / stock has drifted.
 | `want`     | inventory check  | `5`           | quantity you intend to order; triggers the decision fields |
 | `delay_days` | order          | `2` or `5`    | days from today to delivery; `2` in-stock, `5` restocked |
 
-**Decision fields returned by `GET /inventory/{sku}?want=N`**
+**Deterministic decision from `GET /inventory/{sku}?want=N`** (backend — routing only)
 | Field         | Example  | Meaning |
 |---------------|----------|---------|
 | `sufficient`  | `"yes"`/`"no"` | branch on this |
-| `shortfall`   | `5`      | how many short |
-| `restock_qty` | `28`     | how much to restock (`shortfall + buffer`) — pass straight to `/restock` |
-| `buffer`      | `24`     | the smart safety buffer: `max(10, avg_order_qty × 3)` |
-| `history`     | `{orders:3, total_qty:24, avg_qty:8}` | the SKU's past-order stats the buffer is derived from |
+| `shortfall`   | `5`      | how many units short (input to the AI reorder step) |
+
+**Order history from `GET /history/{sku}`** (backend — data for the AI to reason over)
+| Field   | Example | Meaning |
+|---------|---------|---------|
+| `stats` | `{orders:3, total_qty:24, avg_qty:8, max_qty:8}` | aggregates over this SKU's past orders |
+| `orders`| `[{order_id, qty, customer, created_at}, …]` | the raw orders, newest first |
+
+**Reorder decision (AI — not the backend)** — produced by the SuperFlow `Reorder Planner` LLM node
+(or the gitagent), then fed to `POST /restock`:
+| Field         | Example | Meaning |
+|---------------|---------|---------|
+| `restock_qty` | `28`    | units to reorder, chosen by the AI from shortfall + history |
+| `reason`      | `"shortfall 4 + ~3× avg order of 8"` | the AI's one-line justification |
