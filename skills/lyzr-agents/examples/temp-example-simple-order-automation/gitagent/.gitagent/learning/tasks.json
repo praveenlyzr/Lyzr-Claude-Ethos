@@ -1,0 +1,37 @@
+{
+  "tasks": [
+    {
+      "id": "b8bcb302-8fa8-4545-9226-5a71580e8004",
+      "objective": "Fulfill order for customer acme: SKU WIDGET-001, qty 2",
+      "steps": [],
+      "attempts": 1,
+      "status": "succeeded",
+      "started_at": "2026-06-15T03:11:06.650Z",
+      "outcome": "success",
+      "ended_at": "2026-06-15T03:11:19.064Z",
+      "skill_used": "order-fulfillment"
+    },
+    {
+      "id": "c1ba205d-6660-480c-887a-4b7924438a85",
+      "objective": "Fulfill order for customer acme: SKU WIDGET-001, qty 200",
+      "steps": [],
+      "attempts": 1,
+      "status": "succeeded",
+      "started_at": "2026-06-15T03:11:39.041Z",
+      "outcome": "success",
+      "ended_at": "2026-06-15T03:12:00.340Z",
+      "skill_used": "order-fulfillment"
+    },
+    {
+      "id": "6184f3a7-95c6-4301-9740-bd406931d3c1",
+      "objective": "Reset inventory and order history to clean slate",
+      "steps": [],
+      "attempts": 1,
+      "status": "succeeded",
+      "started_at": "2026-06-15T03:12:16.400Z",
+      "outcome": "success",
+      "ended_at": "2026-06-15T03:12:22.373Z",
+      "skill_used": "order-fulfillment"
+    }
+  ]
+}
