@@ -169,3 +169,55 @@ before a fresh demo, or whenever Smart History / stock has drifted.
 |---------------|---------|---------|
 | `restock_qty` | `28`    | units to reorder, chosen by the AI from shortfall + history |
 | `reason`      | `"shortfall 4 + ~3× avg order of 8"` | the AI's one-line justification |
+
+---
+
+# Second SuperFlow: insurance product filing (`superflow-insurance-filing.json`)
+
+A separate, self-contained demo in this folder (cleaned-up rewrite of a real flow). It does **not**
+use the order API above — its only external calls are echo POSTs to `jsonplaceholder.typicode.com`,
+so there's nothing to deploy. Import the JSON into Lyzr Studio → SuperFlow and **Run**.
+
+## The one input: `scenario`
+
+The Trigger takes a single string, `scenario`, which picks a built-in product spec inside
+`Product Spec Intake`. Pass one of these:
+
+```json
+{ "scenario": "use_and_file" }
+```
+
+| `scenario`     | Product the spec builds            | Rule violations? | Route taken & what happens |
+|----------------|------------------------------------|------------------|----------------------------|
+| `use_and_file` | `iSecure Term Shield` (term, pre-approved) | none | **use_and_file** → Build Launch → Launch Product → Build Regulator Filing → File With IRDAI → **Product Live** |
+| `file_and_use` | `WealthMax ULIP Edge` (ULIP, new category, lock-in 5) | none | **file_and_use** → Filing Memo (LLM) → **Actuary Sign-Off (approval pause)** → approve: Build Submission → Submit Filing → **Filed Awaiting Approval** · reject: Rework Notice → **Returned To Product Team** |
+| `rework`       | `QuickGain ULIP` (ULIP, lock-in 3, charges not spread) | yes (lock-in < 5; charges not spread) | **rework** → Rework Notice (LLM) → **Returned To Product Team** |
+
+> Routing is computed in `Filing Verdict`: any rule violation → `rework`; else a `pre_approved`
+> category → `use_and_file`; else → `file_and_use`. So the scenario indirectly chooses the branch
+> by changing the product's `category` / `product_type` / compliance fields.
+
+## Second input: the actuary approval form (only on the `file_and_use` path)
+
+When `scenario` is `file_and_use`, the flow pauses at the **Actuary Sign-Off** (`waitForApproval`)
+node and waits for a human to **Approve** or **Reject**, with a small form:
+
+| Form field       | Type   | Required when | Meaning |
+|------------------|--------|---------------|---------|
+| `actuary_remarks`| string | on **Approve** | appointed actuary's sign-off note (flows into the IRDAI submission) |
+| `rework_note`    | string | on **Reject**  | reason the actuary returned it (flows into the rework notice) |
+
+- **Approve** → `actuary_remarks` is attached and the filing is submitted (`Filed Awaiting Approval`).
+- **Reject** → `rework_note` is attached and the product is returned (`Returned To Product Team`).
+
+## What to watch
+
+- `use_and_file` exercises the **multi-step external POST chain** (launch → regulator filing, each
+  reading the prior response `.body`).
+- `file_and_use` exercises the **durable human approval** (the run suspends until you act) and both
+  approve/reject outcomes.
+- `rework` exercises the **deterministic rule-check → LLM notice** path.
+
+> Demo tip: the merge + branch design is the teaching point — a deterministic `Assess` branch runs
+> in parallel with the `Product Summary` LLM, they **merge**, and `Filing Verdict` reads each branch
+> by an intrinsic field (no marker flags). See `reference/superflow.md` → Design lessons.
