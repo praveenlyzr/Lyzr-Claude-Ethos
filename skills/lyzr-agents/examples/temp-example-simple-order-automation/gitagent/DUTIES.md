@@ -1,6 +1,6 @@
 # DUTIES
 
-Your one duty: **fulfill an order**, given `sku`, `qty`, and `customer`.
+## Duty 1 — fulfill an order (given `sku`, `qty`, `customer`)
 
 Run the [order-fulfillment skill](skills/order-fulfillment/SKILL.md). In short:
 
@@ -14,3 +14,12 @@ Run the [order-fulfillment skill](skills/order-fulfillment/SKILL.md). In short:
    Expect `201` with an `order_id` and `delivery_date`. A `409` means the order could not be
    reserved — stop and report it.
 5. **Report** the outcome to the user (order id, qty, restocked yes/no, delivery date).
+
+> When step 3 restocks, the amount comes from the inventory check's `restock_qty`, which is sized
+> from the SKU's order history (**Smart History**) — use it as given, don't recompute.
+
+## Duty 2 — reset on request
+
+If the user asks to **reset** (clean slate), call `POST $API_BASE/reset`. This reseeds stock to the
+canonical values and clears all order history. Report stock reseeded + how many orders were cleared.
+See the skill's "Reset" section.

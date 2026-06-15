@@ -17,14 +17,12 @@ Seeded SKUs (reset every `deploy.sh` run):
 > Stock is mutable — orders decrement it and restock adds to it. The **restock branch only fires
 > when `qty > current stock`.** So after one out-of-stock run, GIZMO-003 has been restocked and a
 > second small order won't be short. To re-trigger the restock path, either order a larger `qty`
-> (e.g. `100`) or reset the stock.
+> (e.g. `100`) or reset.
 >
-> **Reset to the canonical state above** (needs the `customagents` AWS profile):
+> **Reset to the canonical state + clear all order history** — just hit the endpoint (no AWS needed):
 > ```bash
-> T=temp-example-simple-order-automation-inventory
-> aws dynamodb put-item --profile customagents --region us-east-1 --table-name $T --item '{"sku":{"S":"WIDGET-001"},"quantity":{"N":"50"}}'
-> aws dynamodb put-item --profile customagents --region us-east-1 --table-name $T --item '{"sku":{"S":"GADGET-002"},"quantity":{"N":"3"}}'
-> aws dynamodb put-item --profile customagents --region us-east-1 --table-name $T --item '{"sku":{"S":"GIZMO-003"},"quantity":{"N":"0"}}'
+> curl -s -X POST "https://f50853np0i.execute-api.us-east-1.amazonaws.com/reset"
+> # => {"reset":true,"inventory":[…seeded…],"orders_cleared":N}
 > ```
 > (`bash infra/deploy.sh customagents` also reseeds, but does a full redeploy.)
 
@@ -94,6 +92,42 @@ curl -s -X POST "$B/orders" -d '{"sku":"WIDGET-001","qty":2,"customer":"acme","d
 
 ---
 
+## Smart History (dynamic reorder) — how to see it
+
+When stock is short, `restock_qty` is **sized from this SKU's order history**, not a flat number:
+
+```
+restock_qty = shortfall + max(10, avg_order_qty × 3)
+```
+
+- **No history** → `avg_order_qty = 0` → buffer falls back to `10` (e.g. shortfall 5 → `restock_qty 15`).
+- **With history** → buffer scales with demand, so busy SKUs restock deeper.
+
+Demo it:
+```bash
+B="https://f50853np0i.execute-api.us-east-1.amazonaws.com"
+curl -s -X POST "$B/reset"                                          # clean slate
+curl -s "$B/inventory/GIZMO-003?want=5"                             # restock_qty:15, buffer:10, history.orders:0
+curl -s -X POST "$B/restock?sku=GIZMO-003&qty=30" >/dev/null
+for i in 1 2 3; do curl -s -X POST "$B/orders?sku=GIZMO-003&qty=8&customer=acme&delay_days=2" >/dev/null; done
+curl -s "$B/inventory/GIZMO-003?want=10"                            # buffer:24 (avg 8 × 3), restock_qty:28, history.avg_qty:8
+```
+
+The SuperFlow and gitagent need **no change** to benefit — the Restock step already uses
+`restock_qty` from the inventory check, which is now the smart value.
+
+---
+
+## Reset (clean slate)
+
+```bash
+curl -s -X POST "https://f50853np0i.execute-api.us-east-1.amazonaws.com/reset"
+```
+Restores stock to the seeded table above and **deletes every order** (clears history). Run it
+before a fresh demo, or whenever Smart History / stock has drifted.
+
+---
+
 ## Field reference
 
 **Inputs**
@@ -110,4 +144,6 @@ curl -s -X POST "$B/orders" -d '{"sku":"WIDGET-001","qty":2,"customer":"acme","d
 |---------------|----------|---------|
 | `sufficient`  | `"yes"`/`"no"` | branch on this |
 | `shortfall`   | `5`      | how many short |
-| `restock_qty` | `15`     | how much to restock (shortfall + 10 buffer) — pass straight to `/restock` |
+| `restock_qty` | `28`     | how much to restock (`shortfall + buffer`) — pass straight to `/restock` |
+| `buffer`      | `24`     | the smart safety buffer: `max(10, avg_order_qty × 3)` |
+| `history`     | `{orders:3, total_qty:24, avg_qty:8}` | the SKU's past-order stats the buffer is derived from |

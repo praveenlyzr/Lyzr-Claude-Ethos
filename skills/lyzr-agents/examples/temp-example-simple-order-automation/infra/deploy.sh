@@ -32,10 +32,12 @@ if ! aws iam get-role --role-name "$ROLE" >/dev/null 2>&1; then
     '{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Principal":{"Service":"lambda.amazonaws.com"},"Action":"sts:AssumeRole"}]}' >/dev/null
   aws iam attach-role-policy --role-name "$ROLE" \
     --policy-arn arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
-  aws iam put-role-policy --role-name "$ROLE" --policy-name ddb --policy-document \
-    "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Action\":[\"dynamodb:GetItem\",\"dynamodb:PutItem\",\"dynamodb:UpdateItem\"],\"Resource\":[\"arn:aws:dynamodb:$REGION:$ACCOUNT:table/$INV_TABLE\",\"arn:aws:dynamodb:$REGION:$ACCOUNT:table/$ORD_TABLE\"]}]}"
   echo "   created $ROLE (waiting 12s for IAM propagation)"; sleep 12
 fi
+# (re)apply the data-access policy every deploy — idempotent, picks up new actions
+# (Scan for Smart History, BatchWriteItem/DeleteItem for /reset clearing order history)
+aws iam put-role-policy --role-name "$ROLE" --policy-name ddb --policy-document \
+  "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Action\":[\"dynamodb:GetItem\",\"dynamodb:PutItem\",\"dynamodb:UpdateItem\",\"dynamodb:DeleteItem\",\"dynamodb:Scan\",\"dynamodb:Query\",\"dynamodb:BatchWriteItem\"],\"Resource\":[\"arn:aws:dynamodb:$REGION:$ACCOUNT:table/$INV_TABLE\",\"arn:aws:dynamodb:$REGION:$ACCOUNT:table/$ORD_TABLE\"]}]}"
 ROLE_ARN="$(aws iam get-role --role-name "$ROLE" --query Role.Arn --output text)"
 
 echo ">> Lambdas"
@@ -55,6 +57,7 @@ deploy_fn () {
 deploy_fn inventory inventory.mjs
 deploy_fn restock   restock.mjs
 deploy_fn orders    orders.mjs
+deploy_fn reset     reset.mjs
 
 echo ">> HTTP API"
 API_ID="$(aws apigatewayv2 get-apis --query "Items[?Name=='${PREFIX}-api'].ApiId | [0]" --output text)"
@@ -62,24 +65,27 @@ if [ -z "$API_ID" ] || [ "$API_ID" = "None" ]; then
   API_ID="$(aws apigatewayv2 create-api --name "${PREFIX}-api" --protocol-type HTTP \
     --cors-configuration 'AllowOrigins=*,AllowMethods=*,AllowHeaders=*' --query ApiId --output text)"
   echo "   created api $API_ID"
-  add_route () {  # method path lambda-suffix
-    local fn="$PREFIX-$3"
-    local int_id="$(aws apigatewayv2 create-integration --api-id "$API_ID" --integration-type AWS_PROXY \
-      --integration-uri "arn:aws:lambda:$REGION:$ACCOUNT:function:$fn" --payload-format-version 2.0 \
-      --query IntegrationId --output text)"
-    aws apigatewayv2 create-route --api-id "$API_ID" --route-key "$1 $2" --target "integrations/$int_id" >/dev/null
-    aws lambda add-permission --function-name "$fn" \
-      --statement-id "apigw-$(echo "$1$2" | tr -cd '[:alnum:]')" --action lambda:InvokeFunction \
-      --principal apigateway.amazonaws.com \
-      --source-arn "arn:aws:execute-api:$REGION:$ACCOUNT:$API_ID/*/*" >/dev/null 2>&1 || true
-  }
-  add_route GET  "/inventory/{sku}" inventory
-  add_route POST "/restock"         restock
-  add_route POST "/orders"          orders
-  aws apigatewayv2 create-stage --api-id "$API_ID" --stage-name '$default' --auto-deploy >/dev/null
-else
-  echo "   api exists ($API_ID) — leaving routes as-is"
 fi
+add_route () {  # method path lambda-suffix  (idempotent: skips if the route already exists)
+  local fn="$PREFIX-$3" key="$1 $2"
+  local existing="$(aws apigatewayv2 get-routes --api-id "$API_ID" --query "Items[?RouteKey=='$key'].RouteId | [0]" --output text)"
+  [ -n "$existing" ] && [ "$existing" != "None" ] && return 0
+  local int_id="$(aws apigatewayv2 create-integration --api-id "$API_ID" --integration-type AWS_PROXY \
+    --integration-uri "arn:aws:lambda:$REGION:$ACCOUNT:function:$fn" --payload-format-version 2.0 \
+    --query IntegrationId --output text)"
+  aws apigatewayv2 create-route --api-id "$API_ID" --route-key "$key" --target "integrations/$int_id" >/dev/null
+  aws lambda add-permission --function-name "$fn" \
+    --statement-id "apigw-$(echo "$1$2" | tr -cd '[:alnum:]')" --action lambda:InvokeFunction \
+    --principal apigateway.amazonaws.com \
+    --source-arn "arn:aws:execute-api:$REGION:$ACCOUNT:$API_ID/*/*" >/dev/null 2>&1 || true
+  echo "   added route $key -> $fn"
+}
+add_route GET  "/inventory/{sku}" inventory
+add_route POST "/restock"         restock
+add_route POST "/orders"          orders
+add_route POST "/reset"           reset
+aws apigatewayv2 get-stage --api-id "$API_ID" --stage-name '$default' >/dev/null 2>&1 || \
+  aws apigatewayv2 create-stage --api-id "$API_ID" --stage-name '$default' --auto-deploy >/dev/null
 API_URL="$(aws apigatewayv2 get-api --api-id "$API_ID" --query ApiEndpoint --output text)"
 
 echo ">> Seeding inventory"
@@ -98,7 +104,8 @@ echo "=================================================================="
 echo "DONE. API base URL:"
 echo "  $API_URL"
 echo "Try (query params or JSON body both work):"
-echo "  curl '$API_URL/inventory/GIZMO-003?want=5'        # -> sufficient:\"no\", restock_qty"
+echo "  curl '$API_URL/inventory/GIZMO-003?want=5'        # -> sufficient:\"no\", smart restock_qty + history"
 echo "  curl -X POST '$API_URL/restock?sku=GIZMO-003&qty=15'"
 echo "  curl -X POST '$API_URL/orders?sku=WIDGET-001&qty=2&customer=acme&delay_days=2'"
+echo "  curl -X POST '$API_URL/reset'                     # -> reseed stock + clear order history"
 echo "=================================================================="
