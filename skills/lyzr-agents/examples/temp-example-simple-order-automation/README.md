@@ -29,6 +29,7 @@ Design choices that keep both builds simple:
 Seeded SKUs: `WIDGET-001` (50, in stock), `GADGET-002` (3, low), `GIZMO-003` (0, forces a restock).
 
 ## Contents
+- `example.md` — **how to run it**: exact inputs for the SuperFlow, the gitagent, and raw curl (both scenarios)
 - `infra/` — Lambda handlers (`inventory.mjs`, `restock.mjs`, `orders.mjs`), `seed.json`, `deploy.sh`, `teardown.sh`
 - `superflow-order-automation.json` — the **SuperFlow** build (import into Lyzr Studio → SuperFlow)
 - `gitagent/` — the **gitagent** build (`agent.yaml`, `SOUL.md`, `RULES.md`, `DUTIES.md`, `skills/order-fulfillment/SKILL.md`, `memory/MEMORY.md`)
