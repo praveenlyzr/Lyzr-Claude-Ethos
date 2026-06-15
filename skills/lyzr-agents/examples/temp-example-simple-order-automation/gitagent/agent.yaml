@@ -1,25 +1,29 @@
-spec_version: "0.1"
+spec_version: "0.1.0"
 name: order-fulfillment
-version: "0.1.0"
+version: 1.0.0
 description: >
   Fulfills a customer order against a live inventory: checks stock, and when short, REASONS over the
   order history to decide how much to reorder, restocks, places the order, and pushes the delivery
   date out when a restock was needed. Same flow as the Lyzr SuperFlow next to it (whose reorder step
-  is an LLM node) — here the agent itself is the AI. Curls real, public, zero-auth AWS endpoints.
+  is an LLM node) — here the agent itself is the AI. Acts via the shell (curl) against real, public,
+  zero-auth AWS endpoints.
 
 model:
-  preferred: claude-opus-4-8
-  fallback: claude-sonnet-4-6
+  preferred: "anthropic:claude-sonnet-4-6"
+  fallback:
+    - "anthropic:claude-opus-4-6"
+    - "openai:gpt-4o"
   constraints:
-    - reasoning            # branching decision: stock-sufficient vs restock-then-order
+    temperature: 0.2
+    max_tokens: 1024
 
-tools:
-  - curl                   # the only capability it needs: HTTP to the order API
+# cli = run shell commands (curl the order API); read/memory = use this agent's own files.
+tools: [cli, read, memory]
 
 runtime:
   max_turns: 12
   timeout: 120
 
-# The order API this agent drives (public, no auth). Re-point if you redeploy.
-env:
-  API_BASE: "https://f50853np0i.execute-api.us-east-1.amazonaws.com"
+# The order API lives in the skill (skills/order-fulfillment/SKILL.md sets API_BASE).
+# Endpoints are public + no-auth, so no API keys are needed for the API itself —
+# only the model provider key (ANTHROPIC_API_KEY or OPENAI_API_KEY) to run the agent.
