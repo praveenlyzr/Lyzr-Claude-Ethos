@@ -1,5 +1,11 @@
 # temp example: simple order automation
 
+> ⚠️ **The live AWS endpoints have been torn down** — the base URL below (`https://f50853np0i…`)
+> no longer responds. The code, scripts, SuperFlows, and gitagent are all intact; re-run
+> `bash infra/deploy.sh customagents` to recreate the stack (you'll get a **new** base URL — update
+> it in `superflow-order-automation.json` and `gitagent/agent.yaml`/skill). `bash infra/teardown.sh customagents`
+> removes everything again.
+
 A throwaway example showing the **same workflow built two ways** — a Lyzr **SuperFlow** and a
 **gitagent** — both driving the *same* real, public, zero-auth AWS endpoints.
 
@@ -12,9 +18,10 @@ days** (2 days when in stock, 5 when restocked).
 The deterministic plumbing (HTTP calls, the in-stock/out-of-stock switch, delivery-date rules)
 surrounds a single **AI reasoning node in the middle** — that contrast is the point of the demo.
 
-## Live endpoints (AWS API Gateway + Lambda + DynamoDB, us-east-1, public / no-auth)
-Base URL: `https://f50853np0i.execute-api.us-east-1.amazonaws.com`
-All resources are prefixed `temp-example-simple-order-automation-*` and created by `infra/deploy.sh`.
+## Endpoints (AWS API Gateway + Lambda + DynamoDB, us-east-1, public / no-auth) — *currently torn down*
+Base URL when deployed: `https://f50853np0i.execute-api.us-east-1.amazonaws.com` *(no longer live — a
+fresh `deploy.sh` issues a new URL)*. All resources are prefixed `temp-example-simple-order-automation-*`
+and created by `infra/deploy.sh`.
 
 | Method & path | Params (query **or** JSON body) | Returns |
 |---|---|---|

@@ -1,9 +1,13 @@
 # How to run this example — inputs
 
-All three ways (SuperFlow, gitagent, raw curl) drive the **same** live API:
+> ⚠️ **The endpoints below are torn down** — the `f50853np0i…` URL no longer responds. Re-run
+> `bash infra/deploy.sh customagents` to recreate the stack, then replace the base URL throughout
+> this file (and in the SuperFlow / gitagent) with the **new** one `deploy.sh` prints.
+
+All three ways (SuperFlow, gitagent, raw curl) drive the **same** API (when deployed):
 
 ```
-API_BASE = https://f50853np0i.execute-api.us-east-1.amazonaws.com
+API_BASE = https://f50853np0i.execute-api.us-east-1.amazonaws.com   # example — replaced on each deploy
 ```
 
 Seeded SKUs (reset every `deploy.sh` run):
